@@ -204,7 +204,7 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
 .loc-pill.l359 { background: #ede1d3; color: var(--loc-359); }
 
 /* Heatmap */
-.heatmap-grid { display: grid; grid-template-columns: 60px repeat(4, 1fr); gap: 4px; font-size: 12px; }
+.heatmap-grid { display: grid; grid-template-columns: 60px repeat(3, 1fr); gap: 4px; font-size: 12px; }
 .heatmap-grid .h-cell { padding: 10px 6px; text-align: center; border-radius: 4px; font-variant-numeric: tabular-nums; font-weight: 600; }
 .heatmap-grid .h-header { background: transparent; color: var(--text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; }
 .heatmap-grid .h-month { text-align: right; padding-right: 12px; color: var(--text-muted); font-weight: 600; }
@@ -222,6 +222,75 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
   color: #5a4a00;
 }
 .callout strong { color: var(--mccoy-green-dark); }
+
+/* Global cost view toggle */
+.global-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #fef4d1 0%, #ffe98c 100%);
+  border: 1px solid var(--mccoy-yellow-dark);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.global-toggle-left { display: flex; align-items: center; gap: 12px; }
+.global-toggle-label { font-size: 13px; font-weight: 700; color: var(--mccoy-green-dark); text-transform: uppercase; letter-spacing: 0.3px; }
+.global-toggle-right { font-size: 13px; color: var(--mccoy-green-dark); }
+.global-toggle-right strong { color: var(--mccoy-green-dark); font-variant-numeric: tabular-nums; }
+.global-toggle .btn-toggle.active { background: var(--mccoy-green-dark); color: white; }
+
+/* Rate inputs on Fully-Loaded tab */
+.rate-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.rate-input-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--mccoy-yellow);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+.rate-input-card label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+.rate-input-card .rate-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rate-input-card .dollar-sign {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--mccoy-green-dark);
+}
+.rate-input-card input[type="number"] {
+  flex: 1;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--mccoy-green-dark);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  width: 80px;
+  font-variant-numeric: tabular-nums;
+}
+.rate-input-card input[type="number"]:focus { outline: 2px solid var(--mccoy-yellow); border-color: var(--mccoy-yellow); }
+.rate-input-card .per-mile { font-size: 12px; color: var(--text-muted); }
+.rate-input-card .note { font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
 .footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
 </style>
 </head>
@@ -231,7 +300,7 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
   <div class="header-content">
     <div>
       <h1>Distribution Fleet CPM Analysis</h1>
-      <div class="subtitle">Locations 353 · 356 · 359 &nbsp;|&nbsp; Jan 2023 – Apr 2026 YTD</div>
+      <div class="subtitle">Locations 353 · 356 · 359 &nbsp;|&nbsp; May 2023 – Apr 2026 &nbsp;|&nbsp; 3-Year Rolling Window</div>
     </div>
     <div class="header-badge">McCoy's Building Supply</div>
   </div>
@@ -240,6 +309,7 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
 <nav class="tabs">
   <div class="tabs-inner">
     <button class="tab active" data-tab="summary">Executive Summary</button>
+    <button class="tab" data-tab="loaded">Fully-Loaded CPM</button>
     <button class="tab" data-tab="comparison">Location Comparison</button>
     <button class="tab" data-tab="composition">Cost Composition</button>
     <button class="tab" data-tab="heatmap">Seasonality Heatmap</button>
@@ -249,11 +319,25 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
 
 <div class="container">
 
+  <!-- GLOBAL COST VIEW TOGGLE — affects every tab -->
+  <div class="global-toggle">
+    <div class="global-toggle-left">
+      <span class="global-toggle-label">Cost View:</span>
+      <div class="btn-group" id="cost-view-toggle">
+        <button class="btn-toggle active" data-view="operating">Operating Costs Only</button>
+        <button class="btn-toggle" data-view="loaded">Fully-Loaded (incl. Driver / Ins / Admin)</button>
+      </div>
+    </div>
+    <div class="global-toggle-right" id="global-rates-display">
+      Loaded rates: <strong>$0.80</strong> driver · <strong>$0.15</strong> ins · <strong>$0.15</strong> admin <span style="opacity:0.6"> (edit on Fully-Loaded CPM tab)</span>
+    </div>
+  </div>
+
   <!-- PANEL 1: EXECUTIVE SUMMARY -->
   <div class="panel active" id="panel-summary">
     <div class="panel-header">
       <h2>Executive Summary</h2>
-      <div class="desc">Headline KPIs across the distribution fleet, Jan 2023 through Apr 2026 YTD.</div>
+      <div class="desc">Headline KPIs across the distribution fleet over three 12-month rolling years: Y1 (May 2023 – Apr 2024), Y2 (May 2024 – Apr 2025), Y3 (May 2025 – Apr 2026).</div>
     </div>
 
     <div id="callout-summary"></div>
@@ -262,7 +346,7 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
 
     <div class="card">
       <div class="card-title">Location Snapshot</div>
-      <div class="card-desc">Lifetime totals and 2026 YTD vs prior-year YTD comparison.</div>
+      <div class="card-desc">3-year totals and CPM by rolling year. Y3 vs Y2 column shows the most recent year-over-year change.</div>
       <table id="snapshot-table"></table>
     </div>
 
@@ -280,6 +364,68 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
     </div>
   </div>
 
+  <!-- PANEL 1B: FULLY-LOADED CPM -->
+  <div class="panel" id="panel-loaded">
+    <div class="panel-header">
+      <h2>Fully-Loaded CPM</h2>
+      <div class="desc">Add driver labor, insurance, and administration costs on top of operating costs to model true cost-per-mile. Edit the per-mile rates below and the entire dashboard updates.</div>
+    </div>
+
+    <div class="callout">
+      <strong>How this works:</strong> The rates you enter below apply to all three locations equally. They get multiplied by each location's miles to estimate added cost. Use the <em>Cost View</em> toggle at the top of the page to switch every chart between operating-only and fully-loaded views.
+    </div>
+
+    <div class="rate-inputs">
+      <div class="rate-input-card">
+        <label>Driver Labor</label>
+        <div class="rate-input-wrap">
+          <span class="dollar-sign">$</span>
+          <input type="number" id="rate-driver" value="0.80" step="0.01" min="0" max="5">
+          <span class="per-mile">/ mile</span>
+        </div>
+        <div class="note">Includes wages, benefits, payroll taxes, workers' comp. ATRI national avg: $1.00/mi; Texas local delivery typically $0.70–$0.85.</div>
+      </div>
+      <div class="rate-input-card">
+        <label>Insurance</label>
+        <div class="rate-input-wrap">
+          <span class="dollar-sign">$</span>
+          <input type="number" id="rate-insurance" value="0.15" step="0.01" min="0" max="5">
+          <span class="per-mile">/ mile</span>
+        </div>
+        <div class="note">Liability, physical damage, cargo, and umbrella. Local Texas box-truck delivery typically $0.10–$0.20/mi.</div>
+      </div>
+      <div class="rate-input-card">
+        <label>Administration</label>
+        <div class="rate-input-wrap">
+          <span class="dollar-sign">$</span>
+          <input type="number" id="rate-admin" value="0.15" step="0.01" min="0" max="5">
+          <span class="per-mile">/ mile</span>
+        </div>
+        <div class="note">Dispatch, billing, compliance, fleet management overhead. Industry typical: $0.10–$0.20/mi.</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="loaded-kpi-tiles"></div>
+
+    <div class="card">
+      <div class="card-title">Operating vs Fully-Loaded CPM — by Location</div>
+      <div class="card-desc">Stacked bars show how driver / insurance / admin layers sit on top of the operating cost base.</div>
+      <div class="chart-wrap"><canvas id="chart-loaded-compare"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fully-Loaded Cost Breakdown — by Location</div>
+      <div class="card-desc">Side-by-side view of operating spend, added labor / insurance / admin, and fully-loaded total over the 3-year window.</div>
+      <table id="loaded-breakdown-table"></table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fully-Loaded CPM Trend — by Location</div>
+      <div class="card-desc">Monthly fully-loaded CPM over the 36-month window. The added layers compound over miles, so high-volume location 359 absorbs them most efficiently.</div>
+      <div class="chart-wrap tall"><canvas id="chart-loaded-trend"></canvas></div>
+    </div>
+  </div>
+
   <!-- PANEL 2: LOCATION COMPARISON -->
   <div class="panel" id="panel-comparison">
     <div class="panel-header">
@@ -292,7 +438,7 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
       <div class="btn-group" id="cpm-view-toggle">
         <button class="btn-toggle active" data-view="monthly">Monthly</button>
         <button class="btn-toggle" data-view="rolling3">3-Mo Rolling Avg</button>
-        <button class="btn-toggle" data-view="annual">Annual Avg</button>
+        <button class="btn-toggle" data-view="annual">Rolling Year Avg</button>
       </div>
     </div>
 
@@ -332,11 +478,10 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
     <div class="controls">
       <label>Year:</label>
       <div class="btn-group" id="comp-year-toggle">
-        <button class="btn-toggle" data-year="2023">2023</button>
-        <button class="btn-toggle" data-year="2024">2024</button>
-        <button class="btn-toggle" data-year="2025">2025</button>
-        <button class="btn-toggle" data-year="2026">2026 YTD</button>
-        <button class="btn-toggle active" data-year="all">All Time</button>
+        <button class="btn-toggle" data-year="Y1">Y1</button>
+        <button class="btn-toggle" data-year="Y2">Y2</button>
+        <button class="btn-toggle" data-year="Y3">Y3</button>
+        <button class="btn-toggle active" data-year="all">All 3 Years</button>
       </div>
     </div>
 
@@ -371,7 +516,7 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
 
     <div class="card">
       <div class="card-title" id="heatmap-title">CPM Heatmap — Location 353</div>
-      <div class="card-desc">Darker = higher CPM (worse). Each cell is one month's CPM. Empty cells are months not yet in the dataset.</div>
+      <div class="card-desc">Darker = higher CPM (worse). Rows are months in rolling-year order (May→Apr). Columns are the three 12-month rolling years.</div>
       <div id="heatmap-container"></div>
       <div class="heatmap-legend">
         <span>Lower CPM</span>
@@ -406,8 +551,8 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
     <div class="controls">
       <label>Category:</label>
       <select id="cat-select">
+        <option value="Fuel Spend" selected>Fuel Spend</option>
         <option value="Repair">Repair</option>
-        <option value="Fuel Spend">Fuel Spend</option>
         <option value="Depreciation">Depreciation</option>
         <option value="Tires">Tires</option>
         <option value="PM">PM (Preventive Maintenance)</option>
@@ -424,9 +569,45 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
     </div>
 
     <div class="card">
-      <div class="card-title" id="deep-chart-title">Repair — Monthly Dollars by Location</div>
+      <div class="card-title" id="deep-chart-title">Fuel Spend — Monthly Dollars by Location</div>
       <div class="card-desc" id="deep-chart-desc">Total monthly spend on this category across each location.</div>
       <div class="chart-wrap tall"><canvas id="chart-deepdive"></canvas></div>
+    </div>
+
+    <!-- FUEL-SPECIFIC DEEP VIEW (shows only when Fuel Spend is selected) -->
+    <div id="fuel-deep-view" style="display:none">
+      <div class="callout">
+        <strong>⚠ Note on Y1 fuel data:</strong> Location 353's on-site fuel tank tracking didn't fully come online until November 2023.
+        As a result, 353's <strong>May–Oct 2023</strong> MPG values (visible in the chart below) read higher than realistic
+        because some on-site gallons aren't captured. Card-fuel data is reliable throughout. The Y2 and Y3 numbers
+        for 353 are clean; only the early Y1 months are affected.
+      </div>
+
+      <div class="card-grid-2">
+        <div class="card">
+          <div class="card-title">Miles Per Gallon — Trend by Location</div>
+          <div class="card-desc">Fleet fuel efficiency. Higher is better. Wide swings month-to-month often indicate data gaps.</div>
+          <div class="chart-wrap"><canvas id="chart-mpg"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cost Per Gallon — Trend by Location</div>
+          <div class="card-desc">Blended fuel price (on-site + card). Tracks market diesel pricing and bulk purchase efficiency.</div>
+          <div class="chart-wrap"><canvas id="chart-cpg"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card-grid-2">
+        <div class="card">
+          <div class="card-title">On-Site vs Card Fuel Mix — by Location & Year</div>
+          <div class="card-desc">Percentage of gallons sourced from on-site bulk tanks vs fuel cards. On-site is typically cheaper.</div>
+          <div class="chart-wrap"><canvas id="chart-fuelmix"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Fuel KPIs by Location</div>
+          <div class="card-desc">Lifetime fuel performance summary.</div>
+          <table id="fuel-kpi-table"></table>
+        </div>
+      </div>
     </div>
 
     <div class="card-grid-2">
@@ -446,12 +627,17 @@ td.highlight-bad { color: var(--bad); font-weight: 600; }
 </div>
 
 <script>
-const DATA = {"records":[{"loc":"353","month":"Jan","year":2023,"monthNum":1,"date":"2023-01","miles":9178.776763916016,"total":13640.77,"cpm":1.4861206837086567,"Fuel Spend":1352.21,"Depreciation":11469.08,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":328.49,"Rental":0.0,"Repair":0.0,"Tires":490.99},{"loc":"353","month":"Feb","year":2023,"monthNum":2,"date":"2023-02","miles":10636.24203491211,"total":14591.589999999998,"cpm":1.3718745730028485,"Fuel Spend":2793.96,"Depreciation":11469.14,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":328.49,"Rental":0.0,"Repair":0.0,"Tires":0.0},{"loc":"353","month":"Mar","year":2023,"monthNum":3,"date":"2023-03","miles":11789.715469360352,"total":15354.39,"cpm":1.3023545852233402,"Fuel Spend":2076.48,"Depreciation":11469.12,"Damage":0.0,"Hauling/Towing":0.0,"PM":1357.8,"Reg/Insp":328.49,"Rental":0.0,"Repair":122.5,"Tires":0.0},{"loc":"353","month":"Apr","year":2023,"monthNum":4,"date":"2023-04","miles":10838.643829345703,"total":14540.47,"cpm":1.3415396085469269,"Fuel Spend":1270.31,"Depreciation":11469.13,"Damage":0.0,"Hauling/Towing":0.0,"PM":1472.54,"Reg/Insp":328.49,"Rental":0.0,"Repair":0.0,"Tires":0.0},{"loc":"353","month":"May","year":2023,"monthNum":5,"date":"2023-05","miles":12267.49365234375,"total":15330.3,"cpm":1.2496684681040033,"Fuel Spend":1487.21,"Depreciation":11469.09,"Damage":0.0,"Hauling/Towing":0.0,"PM":1578.4,"Reg/Insp":328.49,"Rental":0.0,"Repair":467.11,"Tires":0.0},{"loc":"353","month":"Jun","year":2023,"monthNum":6,"date":"2023-06","miles":9777.24112701416,"total":13676.089999999998,"cpm":1.3987677937300187,"Fuel Spend":64.9,"Depreciation":11469.14,"Damage":0.0,"Hauling/Towing":0.0,"PM":1813.56,"Reg/Insp":328.49,"Rental":0.0,"Repair":0.0,"Tires":0.0},{"loc":"353","month":"Jul","year":2023,"monthNum":7,"date":"2023-07","miles":4980.702507,"total":13921.71,"cpm":2.795129799548174,"Fuel Spend":863.4,"Depreciation":11469.09,"Damage":0.0,"Hauling/Towing":0.0,"PM":133.15,"Reg/Insp":328.49,"Rental":0.0,"Repair":1127.58,"Tires":0.0},{"loc":"353","month":"Aug","year":2023,"monthNum":8,"date":"2023-08","miles":10719.026851654053,"total":19189.93,"cpm":1.7902679287568724,"Fuel Spend":3533.99,"Depreciation":14669.699999999999,"Damage":0.0,"Hauling/Towing":0.0,"PM":325.25,"Reg/Insp":328.49,"Rental":0.0,"Repair":332.5,"Tires":0.0},{"loc":"353","month":"Sep","year":2023,"monthNum":9,"date":"2023-09","miles":12006.614181518555,"total":24058.52,"cpm":2.003772223899108,"Fuel Spend":2179.78,"Depreciation":19227.19,"Damage":2273.06,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":328.49,"Rental":0.0,"Repair":50.0,"Tires":0.0},{"loc":"353","month":"Oct","year":2023,"monthNum":10,"date":"2023-10","miles":8480.2,"total":30001.86,"cpm":3.537871748307823,"Fuel Spend":801.9,"Depreciation":22842.28,"Damage":4301.67,"Hauling/Towing":0.0,"PM":1727.5200000000002,"Reg/Insp":328.49,"Rental":0.0,"Repair":0.0,"Tires":0.0},{"loc":"353","month":"Nov","year":2023,"monthNum":11,"date":"2023-11","miles":19758.22152,"total":35234.53,"cpm":1.7832844906781873,"Fuel Spend":781.2,"Depreciation":24158.44,"Damage":0.0,"Hauling/Towing":0.0,"PM":1754.8400000000001,"Reg/Insp":328.49,"Rental":0.0,"Repair":8211.560000000001,"Tires":0.0},{"loc":"353","month":"Dec","year":2023,"monthNum":12,"date":"2023-12","miles":25280.5919342041,"total":34398.759999999995,"cpm":1.3606785825872696,"Fuel Spend":1518.5,"Depreciation":24158.409999999996,"Damage":2529.35,"Hauling/Towing":0.0,"PM":1394.53,"Reg/Insp":328.49,"Rental":0.0,"Repair":3291.3900000000003,"Tires":1178.09},{"loc":"353","month":"Jan","year":2024,"monthNum":1,"date":"2024-01","miles":30926.687167584896,"total":36459.36,"cpm":1.1788963946391922,"Fuel Spend":2235.17,"Depreciation":26218.320000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":640.31,"Rental":0.0,"Repair":3929.86,"Tires":3435.7000000000003},{"loc":"353","month":"Feb","year":2024,"monthNum":2,"date":"2024-02","miles":26135.96266067028,"total":41056.61,"cpm":1.5708857000236878,"Fuel Spend":562.74,"Depreciation":26218.319999999996,"Damage":1411.94,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":640.31,"Rental":0.0,"Repair":6566.540000000001,"Tires":5656.76},{"loc":"353","month":"Mar","year":2024,"monthNum":3,"date":"2024-03","miles":33769.13282966614,"total":33690.770000000004,"cpm":0.9976794538947328,"Fuel Spend":2660.9,"Depreciation":26218.28,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":640.31,"Rental":0.0,"Repair":2761.22,"Tires":1410.06},{"loc":"353","month":"Apr","year":2024,"monthNum":4,"date":"2024-04","miles":32913.10326349735,"total":51370.99,"cpm":1.56080663645514,"Fuel Spend":15124.05,"Depreciation":26218.309999999998,"Damage":4030.72,"Hauling/Towing":0.0,"PM":1593.24,"Reg/Insp":640.31,"Rental":0.0,"Repair":3309.87,"Tires":454.49},{"loc":"353","month":"May","year":2024,"monthNum":5,"date":"2024-05","miles":35002.565189003944,"total":46815.17,"cpm":1.3374782604420943,"Fuel Spend":15123.07,"Depreciation":26218.29,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":640.31,"Rental":0.0,"Repair":1472.83,"Tires":3360.67},{"loc":"353","month":"Jun","year":2024,"monthNum":6,"date":"2024-06","miles":31550.607121050358,"total":56997.219999999994,"cpm":1.806533223950921,"Fuel Spend":16159.9,"Depreciation":26218.349999999995,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":640.31,"Rental":0.0,"Repair":7029.050000000001,"Tires":6949.61},{"loc":"353","month":"Jul","year":2024,"monthNum":7,"date":"2024-07","miles":34661.61207526922,"total":65636.09,"cpm":1.8936248509581242,"Fuel Spend":16181.4,"Depreciation":27639.579999999994,"Damage":0.0,"Hauling/Towing":0.0,"PM":2960.1200000000003,"Reg/Insp":640.31,"Rental":0.0,"Repair":16038.279999999999,"Tires":2176.4},{"loc":"353","month":"Aug","year":2024,"monthNum":8,"date":"2024-08","miles":32424.157928466797,"total":65707.93999999999,"cpm":2.0265118417250148,"Fuel Spend":17453.3,"Depreciation":27754.57,"Damage":2593.63,"Hauling/Towing":0.0,"PM":3148.1600000000003,"Reg/Insp":640.31,"Rental":0.0,"Repair":11527.35,"Tires":2590.62},{"loc":"353","month":"Sep","year":2024,"monthNum":9,"date":"2024-09","miles":29196.013458251953,"total":71172.78,"cpm":2.43775678832905,"Fuel Spend":15081.5,"Depreciation":27754.55,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":640.31,"Rental":6556.06,"Repair":14381.210000000001,"Tires":6759.15},{"loc":"353","month":"Oct","year":2024,"monthNum":10,"date":"2024-10","miles":33489.0,"total":75393.47999999998,"cpm":2.25129087162949,"Fuel Spend":17488.7,"Depreciation":29271.53,"Damage":1348.25,"Hauling/Towing":0.0,"PM":1755.5300000000002,"Reg/Insp":640.31,"Rental":9585.960000000001,"Repair":11749.72,"Tires":3553.48},{"loc":"353","month":"Nov","year":2024,"monthNum":11,"date":"2024-11","miles":36859.0,"total":70824.71,"cpm":1.9215038389538512,"Fuel Spend":16768.5,"Depreciation":29271.540000000008,"Damage":1062.65,"Hauling/Towing":0.0,"PM":4789.959999999999,"Reg/Insp":640.31,"Rental":4762.860000000001,"Repair":12296.92,"Tires":1231.9699999999998},{"loc":"353","month":"Dec","year":2024,"monthNum":12,"date":"2024-12","miles":34586.53707885742,"total":78670.51999999999,"cpm":2.274599501552611,"Fuel Spend":14849.5,"Depreciation":29271.570000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":1638.82,"Reg/Insp":640.31,"Rental":392.18,"Repair":28118.709999999992,"Tires":3759.4300000000003},{"loc":"353","month":"Jan","year":2025,"monthNum":1,"date":"2025-01","miles":33377.67,"total":63145.86,"cpm":1.8918594377618332,"Fuel Spend":16280.6,"Depreciation":29271.570000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":3523.13,"Reg/Insp":643.32,"Rental":0.0,"Repair":8181.8899999999985,"Tires":5245.349999999999},{"loc":"353","month":"Feb","year":2025,"monthNum":2,"date":"2025-02","miles":32393.54,"total":56009.84,"cpm":1.7290435068226564,"Fuel Spend":15033.07,"Depreciation":29214.649999999998,"Damage":0.0,"Hauling/Towing":0.0,"PM":939.63,"Reg/Insp":643.32,"Rental":0.0,"Repair":8558.42,"Tires":1620.75},{"loc":"353","month":"Mar","year":2025,"monthNum":3,"date":"2025-03","miles":39095.31,"total":56901.74,"cpm":1.4554620490283874,"Fuel Spend":17741.64,"Depreciation":29214.769999999997,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":643.32,"Rental":0.0,"Repair":3939.4399999999996,"Tires":5362.570000000001},{"loc":"353","month":"Apr","year":2025,"monthNum":4,"date":"2025-04","miles":28794.3,"total":74827.66999999998,"cpm":2.598697311620702,"Fuel Spend":16466.72,"Depreciation":29214.68999999999,"Damage":0.0,"Hauling/Towing":0.0,"PM":1913.5,"Reg/Insp":643.32,"Rental":11581.27,"Repair":13782.300000000001,"Tires":1225.8700000000001},{"loc":"353","month":"May","year":2025,"monthNum":5,"date":"2025-05","miles":25100.0,"total":84075.12000000001,"cpm":3.3496063745019926,"Fuel Spend":14740.01,"Depreciation":28464.900000000005,"Damage":12446.05,"Hauling/Towing":0.0,"PM":1545.42,"Reg/Insp":643.32,"Rental":18332.040000000005,"Repair":5378.469999999999,"Tires":2524.91},{"loc":"353","month":"Jun","year":2025,"monthNum":6,"date":"2025-06","miles":34544.39,"total":67878.23,"cpm":1.964956683270424,"Fuel Spend":14309.31,"Depreciation":27154.839999999993,"Damage":2937.44,"Hauling/Towing":0.0,"PM":1453.3300000000002,"Reg/Insp":643.32,"Rental":12884.390000000001,"Repair":6405.1500000000015,"Tires":2090.45},{"loc":"353","month":"Jul","year":2025,"monthNum":7,"date":"2025-07","miles":36966.01,"total":102677.68999999999,"cpm":2.7776243635707503,"Fuel Spend":52040.12,"Depreciation":27154.809999999998,"Damage":0.0,"Hauling/Towing":0.0,"PM":3856.15,"Reg/Insp":643.32,"Rental":1392.26,"Repair":14376.28,"Tires":3214.75},{"loc":"353","month":"Aug","year":2025,"monthNum":8,"date":"2025-08","miles":32278.0,"total":89664.95999999999,"cpm":2.777897019641861,"Fuel Spend":36873.36,"Depreciation":27425.34,"Damage":0.0,"Hauling/Towing":0.0,"PM":266.3,"Reg/Insp":643.32,"Rental":1496.86,"Repair":16848.800000000003,"Tires":6110.98},{"loc":"353","month":"Sep","year":2025,"monthNum":9,"date":"2025-09","miles":25658.0,"total":83802.82,"cpm":3.2661477901629126,"Fuel Spend":33344.9,"Depreciation":27425.369999999995,"Damage":0.0,"Hauling/Towing":0.0,"PM":1488.4299999999998,"Reg/Insp":643.32,"Rental":5705.03,"Repair":12226.800000000001,"Tires":2968.9700000000003},{"loc":"353","month":"Oct","year":2025,"monthNum":10,"date":"2025-10","miles":28609.16,"total":98509.34999999999,"cpm":3.4432800543602116,"Fuel Spend":51500.99,"Depreciation":27425.339999999993,"Damage":849.74,"Hauling/Towing":0.0,"PM":623.8,"Reg/Insp":834.48,"Rental":13606.340000000002,"Repair":1953.55,"Tires":1715.1100000000001},{"loc":"353","month":"Nov","year":2025,"monthNum":11,"date":"2025-11","miles":26880.52,"total":70146.54999999999,"cpm":2.6095681928772207,"Fuel Spend":24968.49,"Depreciation":27425.379999999997,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":643.32,"Rental":9318.13,"Repair":4573.0599999999995,"Tires":3218.17},{"loc":"353","month":"Dec","year":2025,"monthNum":12,"date":"2025-12","miles":24441.631481170654,"total":77614.12,"cpm":3.1754885126957406,"Fuel Spend":16595.08,"Depreciation":27425.370000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":2438.63,"Reg/Insp":643.32,"Rental":10567.849999999999,"Repair":19143.81,"Tires":800.06},{"loc":"356","month":"Jan","year":2023,"monthNum":1,"date":"2023-01","miles":31396.43390274048,"total":68442.42000000001,"cpm":2.179942480474699,"Fuel Spend":23538.28,"Depreciation":22419.320000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":897.3299999999999,"Reg/Insp":3344.87,"Rental":14656.13,"Repair":2026.99,"Tires":1559.5},{"loc":"356","month":"Feb","year":2023,"monthNum":2,"date":"2023-02","miles":30291.380719184875,"total":53481.60999999999,"cpm":1.7655718798624362,"Fuel Spend":21741.23,"Depreciation":22419.309999999998,"Damage":491.51,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":826.03,"Rental":0.0,"Repair":7605.92,"Tires":397.61},{"loc":"356","month":"Mar","year":2023,"monthNum":3,"date":"2023-03","miles":45021.96041679382,"total":66853.6,"cpm":1.484910905280408,"Fuel Spend":31195.66,"Depreciation":22419.370000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":1398.76,"Reg/Insp":866.03,"Rental":7884.530000000001,"Repair":2209.75,"Tires":879.5},{"loc":"356","month":"Apr","year":2023,"monthNum":4,"date":"2023-04","miles":43672.09832763672,"total":89278.05999999998,"cpm":2.044281438693839,"Fuel Spend":30481.9,"Depreciation":22419.309999999994,"Damage":0.0,"Hauling/Towing":0.0,"PM":3336.9700000000003,"Reg/Insp":826.03,"Rental":3130.39,"Repair":27558.85,"Tires":1524.6100000000001},{"loc":"356","month":"May","year":2023,"monthNum":5,"date":"2023-05","miles":41249.55976867676,"total":60308.01,"cpm":1.4620279668001561,"Fuel Spend":26092.17,"Depreciation":22419.360000000004,"Damage":0.0,"Hauling/Towing":0.0,"PM":3527.12,"Reg/Insp":969.6899999999999,"Rental":0.0,"Repair":5484.83,"Tires":1814.84},{"loc":"356","month":"Jun","year":2023,"monthNum":6,"date":"2023-06","miles":39583.01786887646,"total":64311.06,"cpm":1.6247134115200155,"Fuel Spend":24598.84,"Depreciation":22419.30999999999,"Damage":1363.81,"Hauling/Towing":0.0,"PM":5972.259999999999,"Reg/Insp":826.03,"Rental":0.0,"Repair":5657.44,"Tires":3473.37},{"loc":"356","month":"Jul","year":2023,"monthNum":7,"date":"2023-07","miles":35360.28891,"total":60672.98999999999,"cpm":1.7158510823943374,"Fuel Spend":20906.87,"Depreciation":22419.39,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":826.03,"Rental":0.0,"Repair":14408.109999999999,"Tires":2112.59},{"loc":"356","month":"Aug","year":2023,"monthNum":8,"date":"2023-08","miles":53061.828746795654,"total":64142.78,"cpm":1.208830933929572,"Fuel Spend":34718.22,"Depreciation":21645.78,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":826.03,"Rental":0.0,"Repair":2715.24,"Tires":4237.51},{"loc":"356","month":"Sep","year":2023,"monthNum":9,"date":"2023-09","miles":48134.892486572266,"total":71875.39,"cpm":1.4932076563804604,"Fuel Spend":34251.19,"Depreciation":23515.74,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":826.03,"Rental":5663.17,"Repair":2525.92,"Tires":5093.339999999999},{"loc":"356","month":"Oct","year":2023,"monthNum":10,"date":"2023-10","miles":46107.58,"total":76290.4,"cpm":1.6546173102123336,"Fuel Spend":33337.2,"Depreciation":23515.649999999998,"Damage":0.0,"Hauling/Towing":0.0,"PM":1353.6,"Reg/Insp":826.03,"Rental":3168.9799999999996,"Repair":8768.37,"Tires":5320.57},{"loc":"356","month":"Nov","year":2023,"monthNum":11,"date":"2023-11","miles":49826.59882,"total":80155.53000000001,"cpm":1.608689573405645,"Fuel Spend":36803.21,"Depreciation":23515.650000000005,"Damage":0.0,"Hauling/Towing":0.0,"PM":1292.29,"Reg/Insp":826.03,"Rental":13372.14,"Repair":1630.44,"Tires":2715.7700000000004},{"loc":"356","month":"Dec","year":2023,"monthNum":12,"date":"2023-12","miles":40007.13205718994,"total":87421.72,"cpm":2.185153384027408,"Fuel Spend":27072.81,"Depreciation":23515.689999999995,"Damage":0.0,"Hauling/Towing":0.0,"PM":5363.250000000001,"Reg/Insp":826.03,"Rental":12286.64,"Repair":6194.21,"Tires":12163.09},{"loc":"356","month":"Jan","year":2024,"monthNum":1,"date":"2024-01","miles":37320.979537546635,"total":59148.920000000006,"cpm":1.5848705133929684,"Fuel Spend":24243.09,"Depreciation":23515.640000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":3275.3999999999996,"Reg/Insp":1126.32,"Rental":1559.76,"Repair":4558.59,"Tires":870.12},{"loc":"356","month":"Feb","year":2024,"monthNum":2,"date":"2024-02","miles":43590.89241409302,"total":73140.98999999999,"cpm":1.6778961372296515,"Fuel Spend":31429.89,"Depreciation":23515.67,"Damage":1504.12,"Hauling/Towing":1363.33,"PM":2249.52,"Reg/Insp":1126.32,"Rental":5348.129999999999,"Repair":5752.61,"Tires":851.4},{"loc":"356","month":"Mar","year":2024,"monthNum":3,"date":"2024-03","miles":47165.39633053541,"total":97295.37000000001,"cpm":2.0628549226673174,"Fuel Spend":39700.79,"Depreciation":23515.65,"Damage":5544.88,"Hauling/Towing":0.0,"PM":3904.4000000000005,"Reg/Insp":1126.32,"Rental":13516.69,"Repair":7526.03,"Tires":2460.6099999999997},{"loc":"356","month":"Apr","year":2024,"monthNum":4,"date":"2024-04","miles":51402.15273666382,"total":88883.03,"cpm":1.7291694076579414,"Fuel Spend":38043.04,"Depreciation":23515.689999999995,"Damage":0.0,"Hauling/Towing":0.0,"PM":1659.98,"Reg/Insp":1126.32,"Rental":5112.0999999999985,"Repair":12538.3,"Tires":6887.5999999999985},{"loc":"356","month":"May","year":2024,"monthNum":5,"date":"2024-05","miles":60361.11539268494,"total":99022.19,"cpm":1.6404963585547052,"Fuel Spend":38442.37,"Depreciation":23515.67000000001,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":1126.32,"Rental":24331.079999999994,"Repair":8628.980000000001,"Tires":2977.7700000000004},{"loc":"356","month":"Jun","year":2024,"monthNum":6,"date":"2024-06","miles":55755.4710855484,"total":98281.90000000001,"cpm":1.7627310483880798,"Fuel Spend":33392.94,"Depreciation":30140.189999999995,"Damage":0.0,"Hauling/Towing":0.0,"PM":7165.09,"Reg/Insp":1126.32,"Rental":13715.450000000003,"Repair":6727.61,"Tires":6014.3},{"loc":"356","month":"Jul","year":2024,"monthNum":7,"date":"2024-07","miles":50564.099448919296,"total":72115.96999999999,"cpm":1.4262287034866061,"Fuel Spend":27241.56,"Depreciation":27352.089999999997,"Damage":0.0,"Hauling/Towing":0.0,"PM":7350.329999999998,"Reg/Insp":1126.32,"Rental":6094.5,"Repair":440.56,"Tires":2510.61},{"loc":"356","month":"Aug","year":2024,"monthNum":8,"date":"2024-08","miles":44778.21603012085,"total":85235.26,"cpm":1.9034983426464558,"Fuel Spend":22916.35,"Depreciation":27352.05,"Damage":189.1,"Hauling/Towing":0.0,"PM":7120.79,"Reg/Insp":1126.32,"Rental":19929.86,"Repair":4605.7,"Tires":1995.0900000000001},{"loc":"356","month":"Sep","year":2024,"monthNum":9,"date":"2024-09","miles":48646.122113227844,"total":92908.26,"cpm":1.9098800883603504,"Fuel Spend":19045.08,"Depreciation":29731.620000000003,"Damage":3083.63,"Hauling/Towing":0.0,"PM":8036.79,"Reg/Insp":1126.32,"Rental":5377.240000000001,"Repair":21181.039999999997,"Tires":5326.54},{"loc":"356","month":"Oct","year":2024,"monthNum":10,"date":"2024-10","miles":45643.0,"total":96285.95,"cpm":2.109544727559538,"Fuel Spend":19503.8,"Depreciation":32605.909999999996,"Damage":0.0,"Hauling/Towing":0.0,"PM":0.0,"Reg/Insp":1126.32,"Rental":8302.779999999999,"Repair":30700.640000000003,"Tires":4046.5},{"loc":"356","month":"Nov","year":2024,"monthNum":11,"date":"2024-11","miles":33693.0,"total":79360.59999999998,"cpm":2.3554031994776357,"Fuel Spend":13866.05,"Depreciation":32545.559999999994,"Damage":0.0,"Hauling/Towing":2401.9,"PM":5946.84,"Reg/Insp":1126.32,"Rental":9292.05,"Repair":11703.199999999999,"Tires":2478.6800000000003},{"loc":"356","month":"Dec","year":2024,"monthNum":12,"date":"2024-12","miles":36279.19531059265,"total":74208.79,"cpm":2.045491620326342,"Fuel Spend":14157.6,"Depreciation":32545.43,"Damage":3161.54,"Hauling/Towing":0.0,"PM":2092.56,"Reg/Insp":1126.32,"Rental":7167.49,"Repair":7859.59,"Tires":6098.26},{"loc":"356","month":"Jan","year":2025,"monthNum":1,"date":"2025-01","miles":34566.98,"total":135087.56,"cpm":3.9079942766189,"Fuel Spend":14075.2,"Depreciation":32545.449999999997,"Damage":40579.74,"Hauling/Towing":0.0,"PM":6116.2,"Reg/Insp":1220.1699999999998,"Rental":5486.75,"Repair":33545.34999999999,"Tires":1518.7},{"loc":"356","month":"Feb","year":2025,"monthNum":2,"date":"2025-02","miles":40432.81,"total":114892.2,"cpm":2.8415586252847627,"Fuel Spend":17679.08,"Depreciation":32545.499999999996,"Damage":35764.31,"Hauling/Towing":0.0,"PM":3648.8,"Reg/Insp":1121.87,"Rental":766.3,"Repair":22924.010000000002,"Tires":442.33},{"loc":"356","month":"Mar","year":2025,"monthNum":3,"date":"2025-03","miles":43805.61,"total":107598.33999999998,"cpm":2.45626850076965,"Fuel Spend":16965.58,"Depreciation":35347.929999999986,"Damage":-1455.35,"Hauling/Towing":0.0,"PM":4937.64,"Reg/Insp":1161.87,"Rental":17122.28,"Repair":29930.690000000002,"Tires":3587.7},{"loc":"356","month":"Apr","year":2025,"monthNum":4,"date":"2025-04","miles":43177.89,"total":143831.88999999998,"cpm":3.3311467975855233,"Fuel Spend":16761.84,"Depreciation":35002.98999999999,"Damage":0.0,"Hauling/Towing":0.0,"PM":2481.6600000000003,"Reg/Insp":1121.87,"Rental":7090.9,"Repair":71721.97,"Tires":9650.66},{"loc":"356","month":"May","year":2025,"monthNum":5,"date":"2025-05","miles":50520.0,"total":108320.45,"cpm":2.144110253365004,"Fuel Spend":19551.0,"Depreciation":34858.380000000005,"Damage":0.0,"Hauling/Towing":0.0,"PM":7323.85,"Reg/Insp":1313.03,"Rental":13978.359999999997,"Repair":29765.699999999997,"Tires":1530.13},{"loc":"356","month":"Jun","year":2025,"monthNum":6,"date":"2025-06","miles":49573.63,"total":86431.82000000002,"cpm":1.7435039556312504,"Fuel Spend":18458.22,"Depreciation":35307.700000000004,"Damage":558.18,"Hauling/Towing":0.0,"PM":1986.98,"Reg/Insp":1121.87,"Rental":0.0,"Repair":21261.04,"Tires":7737.83},{"loc":"356","month":"Jul","year":2025,"monthNum":7,"date":"2025-07","miles":44313.75,"total":90994.42000000001,"cpm":2.0534127669177176,"Fuel Spend":17048.2,"Depreciation":35320.61999999999,"Damage":6297.030000000001,"Hauling/Towing":0.0,"PM":2722.26,"Reg/Insp":1121.87,"Rental":226.39,"Repair":27455.230000000003,"Tires":802.82},{"loc":"356","month":"Aug","year":2025,"monthNum":8,"date":"2025-08","miles":54269.0,"total":76571.91,"cpm":1.4109696143286223,"Fuel Spend":19321.33,"Depreciation":35320.62,"Damage":0.0,"Hauling/Towing":0.0,"PM":2426.88,"Reg/Insp":1121.87,"Rental":0.0,"Repair":11829.160000000002,"Tires":6552.05},{"loc":"356","month":"Sep","year":2025,"monthNum":9,"date":"2025-09","miles":48371.0,"total":89916.98000000001,"cpm":1.858902648280995,"Fuel Spend":16556.24,"Depreciation":35320.54999999999,"Damage":0.0,"Hauling/Towing":0.0,"PM":4976.4400000000005,"Reg/Insp":1121.87,"Rental":0.0,"Repair":29608.22,"Tires":2333.66},{"loc":"356","month":"Oct","year":2025,"monthNum":10,"date":"2025-10","miles":59068.85,"total":97741.01,"cpm":1.654696341641999,"Fuel Spend":21398.58,"Depreciation":35320.63,"Damage":0.0,"Hauling/Towing":0.0,"PM":7481.56,"Reg/Insp":1121.87,"Rental":0.0,"Repair":27069.5,"Tires":5348.869999999999},{"loc":"356","month":"Nov","year":2025,"monthNum":11,"date":"2025-11","miles":46767.28,"total":84925.67000000001,"cpm":1.8159206607696667,"Fuel Spend":17603.12,"Depreciation":35320.57,"Damage":0.0,"Hauling/Towing":0.0,"PM":1051.6599999999999,"Reg/Insp":1121.87,"Rental":0.0,"Repair":25295.449999999997,"Tires":4533.0},{"loc":"356","month":"Dec","year":2025,"monthNum":12,"date":"2025-12","miles":47209.002784729004,"total":109081.11999999998,"cpm":2.310599961143114,"Fuel Spend":18512.09,"Depreciation":35320.65999999999,"Damage":8320.98,"Hauling/Towing":0.0,"PM":2151.89,"Reg/Insp":1121.87,"Rental":5239.89,"Repair":31322.82,"Tires":7090.919999999999},{"loc":"359","month":"Jan","year":2023,"monthNum":1,"date":"2023-01","miles":193885.8244857788,"total":233243.5,"cpm":1.2029940848878717,"Fuel Spend":95071.56,"Depreciation":78724.51000000002,"Damage":387.5,"Hauling/Towing":0.0,"PM":9898.119999999999,"Reg/Insp":440.0,"Rental":10202.48,"Repair":29766.81,"Tires":8752.52},{"loc":"359","month":"Feb","year":2023,"monthNum":2,"date":"2023-02","miles":169398.94369506836,"total":228761.29,"cpm":1.3504292589438374,"Fuel Spend":87525.73,"Depreciation":78724.49000000003,"Damage":0.0,"Hauling/Towing":0.0,"PM":18907.179999999997,"Reg/Insp":2638.84,"Rental":10820.77,"Repair":14075.840000000004,"Tires":16068.44},{"loc":"359","month":"Mar","year":2023,"monthNum":3,"date":"2023-03","miles":224804.5838317871,"total":267555.88000000006,"cpm":1.1901709272983605,"Fuel Spend":112267.01,"Depreciation":78724.61000000004,"Damage":0.0,"Hauling/Towing":0.0,"PM":15274.48,"Reg/Insp":2918.84,"Rental":3262.81,"Repair":44385.85999999999,"Tires":10722.269999999999},{"loc":"359","month":"Apr","year":2023,"monthNum":4,"date":"2023-04","miles":203649.47534942627,"total":229134.45000000004,"cpm":1.1251413715004475,"Fuel Spend":94684.98,"Depreciation":81130.69000000003,"Damage":1079.3600000000001,"Hauling/Towing":742.5,"PM":1185.0,"Reg/Insp":6112.48,"Rental":0.0,"Repair":33529.75000000001,"Tires":10669.689999999999},{"loc":"359","month":"May","year":2023,"monthNum":5,"date":"2023-05","miles":225419.20787072182,"total":285565.42,"cpm":1.26681937487675,"Fuel Spend":107265.2,"Depreciation":87122.70999999998,"Damage":440.0,"Hauling/Towing":962.5,"PM":5816.33,"Reg/Insp":2518.84,"Rental":0.0,"Repair":52716.04,"Tires":28723.8},{"loc":"359","month":"Jun","year":2023,"monthNum":6,"date":"2023-06","miles":218674.69105529785,"total":269334.61,"cpm":1.231667957092901,"Fuel Spend":93701.93,"Depreciation":89736.75000000001,"Damage":1826.67,"Hauling/Towing":0.0,"PM":35458.340000000004,"Reg/Insp":2398.84,"Rental":0.0,"Repair":37125.2,"Tires":9086.880000000001},{"loc":"359","month":"Jul","year":2023,"monthNum":7,"date":"2023-07","miles":205414.4765,"total":304049.04999999993,"cpm":1.4801734287700017,"Fuel Spend":86337.02,"Depreciation":92350.41000000002,"Damage":10674.08,"Hauling/Towing":0.0,"PM":19737.21,"Reg/Insp":2398.84,"Rental":3227.11,"Repair":61015.78,"Tires":28308.600000000002},{"loc":"359","month":"Aug","year":2023,"monthNum":8,"date":"2023-08","miles":233636.29492986202,"total":309590.20000000007,"cpm":1.3250946309217047,"Fuel Spend":100933.38,"Depreciation":92350.24,"Damage":26995.16,"Hauling/Towing":1500.0,"PM":13842.38,"Reg/Insp":2398.84,"Rental":0.0,"Repair":44251.92000000001,"Tires":27318.28},{"loc":"359","month":"Sep","year":2023,"monthNum":9,"date":"2023-09","miles":218010.25304412842,"total":270055.9700000001,"cpm":1.238730592846644,"Fuel Spend":115647.64,"Depreciation":93075.10000000005,"Damage":1254.48,"Hauling/Towing":1237.5,"PM":17714.7,"Reg/Insp":2438.84,"Rental":0.0,"Repair":27241.590000000007,"Tires":11446.119999999999},{"loc":"359","month":"Oct","year":2023,"monthNum":10,"date":"2023-10","miles":223004.81,"total":285490.68,"cpm":1.280199651299001,"Fuel Spend":113054.3,"Depreciation":101166.56000000001,"Damage":0.0,"Hauling/Towing":0.0,"PM":16957.25,"Reg/Insp":3138.84,"Rental":1745.08,"Repair":46993.34000000001,"Tires":2435.3100000000004},{"loc":"359","month":"Nov","year":2023,"monthNum":11,"date":"2023-11","miles":196956.3935,"total":233753.72999999998,"cpm":1.186829865464611,"Fuel Spend":77957.21,"Depreciation":104300.36000000002,"Damage":1813.33,"Hauling/Towing":2900.0,"PM":15583.25,"Reg/Insp":2398.84,"Rental":206.12,"Repair":23804.06,"Tires":4790.56},{"loc":"359","month":"Dec","year":2023,"monthNum":12,"date":"2023-12","miles":200731.76708984375,"total":326657.4699999999,"cpm":1.6273332055797336,"Fuel Spend":85854.26,"Depreciation":109764.74999999996,"Damage":3699.3599999999997,"Hauling/Towing":3025.0,"PM":32980.93,"Reg/Insp":2458.84,"Rental":7033.83,"Repair":69240.98,"Tires":12599.52},{"loc":"359","month":"Jan","year":2024,"monthNum":1,"date":"2024-01","miles":211950.12030029297,"total":276763.5900000001,"cpm":1.305795861818237,"Fuel Spend":96170.14,"Depreciation":110345.75000000003,"Damage":2296.63,"Hauling/Towing":1375.0,"PM":8838.2,"Reg/Insp":4165.54,"Rental":5645.39,"Repair":34540.18,"Tires":13386.759999999998},{"loc":"359","month":"Feb","year":2024,"monthNum":2,"date":"2024-02","miles":219070.7993927002,"total":260436.36000000004,"cpm":1.1888227948314969,"Fuel Spend":87525.51,"Depreciation":110345.65000000004,"Damage":322.0,"Hauling/Towing":0.0,"PM":18186.25,"Reg/Insp":3925.54,"Rental":0.0,"Repair":23149.379999999997,"Tires":16982.030000000002},{"loc":"359","month":"Mar","year":2024,"monthNum":3,"date":"2024-03","miles":223701.40213012695,"total":320240.74,"cpm":1.4315544603234813,"Fuel Spend":98956.02,"Depreciation":110345.75000000001,"Damage":1110.79,"Hauling/Towing":1862.78,"PM":30140.339999999997,"Reg/Insp":4285.54,"Rental":7549.719999999999,"Repair":39283.89,"Tires":26705.910000000003},{"loc":"359","month":"Apr","year":2024,"monthNum":4,"date":"2024-04","miles":223408.80355072021,"total":292970.89999999997,"cpm":1.311366854589896,"Fuel Spend":94021.68,"Depreciation":110345.56000000001,"Damage":6358.18,"Hauling/Towing":0.0,"PM":16552.559999999998,"Reg/Insp":4245.54,"Rental":13220.75,"Repair":38441.09,"Tires":9785.54},{"loc":"359","month":"May","year":2024,"monthNum":5,"date":"2024-05","miles":234362.35646820068,"total":310320.18,"cpm":1.324104197775062,"Fuel Spend":96478.56,"Depreciation":110345.86000000004,"Damage":3527.11,"Hauling/Towing":0.0,"PM":36266.149999999994,"Reg/Insp":3925.54,"Rental":1114.16,"Repair":36035.26000000001,"Tires":22627.54},{"loc":"359","month":"Jun","year":2024,"monthNum":6,"date":"2024-06","miles":202681.5093460083,"total":277157.65,"cpm":1.367454045977374,"Fuel Spend":84676.99,"Depreciation":110345.59999999999,"Damage":0.0,"Hauling/Towing":0.0,"PM":9432.35,"Reg/Insp":3765.54,"Rental":0.0,"Repair":49949.69000000001,"Tires":18987.48},{"loc":"359","month":"Jul","year":2024,"monthNum":7,"date":"2024-07","miles":257431.80666351318,"total":295305.63999999996,"cpm":1.1471218099556413,"Fuel Spend":90958.4,"Depreciation":110345.84,"Damage":0.0,"Hauling/Towing":0.0,"PM":15684.55,"Reg/Insp":3845.54,"Rental":0.0,"Repair":61344.960000000014,"Tires":13126.350000000002},{"loc":"359","month":"Aug","year":2024,"monthNum":8,"date":"2024-08","miles":275270.1270747185,"total":346945.81,"cpm":1.2603830778405756,"Fuel Spend":113188.48,"Depreciation":110551.57000000002,"Damage":6123.16,"Hauling/Towing":0.0,"PM":45740.45000000001,"Reg/Insp":3805.54,"Rental":1125.12,"Repair":46154.420000000006,"Tires":20257.07},{"loc":"359","month":"Sep","year":2024,"monthNum":9,"date":"2024-09","miles":240087.80004882812,"total":287836.98000000004,"cpm":1.198882158699696,"Fuel Spend":78164.51,"Depreciation":110551.81999999999,"Damage":3560.89,"Hauling/Towing":1411.11,"PM":10388.640000000001,"Reg/Insp":3845.54,"Rental":6091.950000000001,"Repair":64529.59,"Tires":9292.93},{"loc":"359","month":"Oct","year":2024,"monthNum":10,"date":"2024-10","miles":257712.0,"total":283974.26,"cpm":1.1019054603588503,"Fuel Spend":85829.63,"Depreciation":110551.49,"Damage":0.0,"Hauling/Towing":0.0,"PM":21733.96,"Reg/Insp":4365.54,"Rental":780.48,"Repair":48691.04000000001,"Tires":12022.12},{"loc":"359","month":"Nov","year":2024,"monthNum":11,"date":"2024-11","miles":235628.0,"total":294043.0800000001,"cpm":1.247912302442834,"Fuel Spend":86867.1,"Depreciation":110551.85000000003,"Damage":5423.07,"Hauling/Towing":0.0,"PM":40287.95,"Reg/Insp":3805.54,"Rental":186.2,"Repair":34640.469999999994,"Tires":12280.9},{"loc":"359","month":"Dec","year":2024,"monthNum":12,"date":"2024-12","miles":230605.72258758545,"total":288911.04,"cpm":1.2528355183825493,"Fuel Spend":81101.99,"Depreciation":110551.38000000002,"Damage":391.77,"Hauling/Towing":0.0,"PM":20232.879999999997,"Reg/Insp":3805.54,"Rental":3146.12,"Repair":51202.69,"Tires":18478.670000000002},{"loc":"359","month":"Jan","year":2025,"monthNum":1,"date":"2025-01","miles":233167.55,"total":274641.82,"cpm":1.1778732503729614,"Fuel Spend":96240.41,"Depreciation":110551.67000000003,"Damage":624.49,"Hauling/Towing":250.0,"PM":6734.8099999999995,"Reg/Insp":4369.0599999999995,"Rental":2501.42,"Repair":43994.13,"Tires":9375.83},{"loc":"359","month":"Feb","year":2025,"monthNum":2,"date":"2025-02","miles":229174.7,"total":256856.38000000006,"cpm":1.120788551266785,"Fuel Spend":87399.74,"Depreciation":110551.64000000004,"Damage":927.0,"Hauling/Towing":0.0,"PM":8411.93,"Reg/Insp":4209.0599999999995,"Rental":4538.36,"Repair":36171.73000000001,"Tires":4646.92},{"loc":"359","month":"Mar","year":2025,"monthNum":3,"date":"2025-03","miles":256640.02,"total":354550.2699999999,"cpm":1.3815081139722476,"Fuel Spend":94526.37,"Depreciation":110551.61999999992,"Damage":42581.55,"Hauling/Towing":0.0,"PM":29060.339999999997,"Reg/Insp":3609.06,"Rental":5451.27,"Repair":49433.979999999996,"Tires":19336.08},{"loc":"359","month":"Apr","year":2025,"monthNum":4,"date":"2025-04","miles":251269.7,"total":306345.4000000001,"cpm":1.2191895799612928,"Fuel Spend":97778.35,"Depreciation":110551.72000000004,"Damage":0.0,"Hauling/Towing":0.0,"PM":14353.230000000003,"Reg/Insp":4329.0599999999995,"Rental":718.07,"Repair":71782.31000000001,"Tires":6832.660000000001},{"loc":"359","month":"May","year":2025,"monthNum":5,"date":"2025-05","miles":248222.0,"total":335638.2,"cpm":1.352169428978898,"Fuel Spend":88934.23,"Depreciation":107592.98,"Damage":17871.36,"Hauling/Towing":0.0,"PM":26191.730000000003,"Reg/Insp":3649.06,"Rental":9388.02,"Repair":48651.79999999998,"Tires":33359.020000000004},{"loc":"359","month":"Jun","year":2025,"monthNum":6,"date":"2025-06","miles":234224.96,"total":296892.36000000004,"cpm":1.2675521857277723,"Fuel Spend":84566.62,"Depreciation":105804.77000000008,"Damage":429.74,"Hauling/Towing":0.0,"PM":10383.91,"Reg/Insp":3883.5,"Rental":5087.01,"Repair":69492.38999999998,"Tires":17244.420000000002},{"loc":"359","month":"Jul","year":2025,"monthNum":7,"date":"2025-07","miles":237221.11,"total":325817.3599999999,"cpm":1.373475404444402,"Fuel Spend":89397.33,"Depreciation":105804.65999999993,"Damage":3702.63,"Hauling/Towing":9949.06,"PM":8377.35,"Reg/Insp":3729.06,"Rental":593.69,"Repair":89289.13999999998,"Tires":14974.44},{"loc":"359","month":"Aug","year":2025,"monthNum":8,"date":"2025-08","miles":254336.0,"total":341862.6100000001,"cpm":1.3441377154630099,"Fuel Spend":97644.9,"Depreciation":105940.40000000005,"Damage":11319.1,"Hauling/Towing":0.0,"PM":29169.260000000013,"Reg/Insp":3769.06,"Rental":4674.89,"Repair":53227.21000000001,"Tires":36117.79000000001},{"loc":"359","month":"Sep","year":2025,"monthNum":9,"date":"2025-09","miles":261927.0,"total":309885.22,"cpm":1.1830976569807616,"Fuel Spend":91487.13,"Depreciation":105395.58999999995,"Damage":4689.97,"Hauling/Towing":2630.4300000000003,"PM":6809.43,"Reg/Insp":4129.0599999999995,"Rental":0.0,"Repair":60518.96999999999,"Tires":34224.64000000001},{"loc":"359","month":"Oct","year":2025,"monthNum":10,"date":"2025-10","miles":288906.49,"total":366433.69000000006,"cpm":1.268347035056222,"Fuel Spend":103074.27,"Depreciation":105376.01000000002,"Damage":0.0,"Hauling/Towing":29428.76,"PM":19311.29,"Reg/Insp":3809.06,"Rental":5968.790000000001,"Repair":70006.46000000002,"Tires":29459.05000000001},{"loc":"359","month":"Nov","year":2025,"monthNum":11,"date":"2025-11","miles":248795.39,"total":295443.22000000003,"cpm":1.1874947522138575,"Fuel Spend":92625.0,"Depreciation":105508.69999999998,"Damage":900.0,"Hauling/Towing":0.0,"PM":21252.42,"Reg/Insp":3649.06,"Rental":6910.28,"Repair":44422.57000000001,"Tires":20175.190000000006},{"loc":"359","month":"Dec","year":2025,"monthNum":12,"date":"2025-12","miles":232632.39054870605,"total":327127.10000000003,"cpm":1.4061975601437569,"Fuel Spend":85156.98,"Depreciation":105508.71000000004,"Damage":3552.04,"Hauling/Towing":1518.0,"PM":9446.7,"Reg/Insp":3649.06,"Rental":12345.929999999997,"Repair":88198.95,"Tires":17750.73},{"loc":"353","month":"Jan","year":2026,"monthNum":1,"date":"2026-01","miles":29785.82,"total":49239.369999999995,"cpm":1.6531144685625574,"Fuel Spend":16031.7,"Depreciation":27425.35,"Damage":0.0,"Hauling/Towing":0.0,"PM":1336.38,"Reg/Insp":0.0,"Rental":0.0,"Repair":1048.63,"Tires":3397.31},{"loc":"353","month":"Feb","year":2026,"monthNum":2,"date":"2026-02","miles":29413.300079345703,"total":71451.95,"cpm":2.4292394871452805,"Fuel Spend":21686.510000000002,"Depreciation":27425.32,"Damage":868.25,"Hauling/Towing":7777.57,"PM":681.95,"Reg/Insp":0.0,"Rental":0.0,"Repair":9517.34,"Tires":3495.01},{"loc":"353","month":"Mar","year":2026,"monthNum":3,"date":"2026-03","miles":27866.207946777344,"total":83284.21,"cpm":2.9887170209548235,"Fuel Spend":23150.12,"Depreciation":27425.35,"Damage":15370.22,"Hauling/Towing":0.0,"PM":1398.03,"Reg/Insp":0.0,"Rental":0.0,"Repair":12957.61,"Tires":2982.88},{"loc":"353","month":"Apr","year":2026,"monthNum":4,"date":"2026-04","miles":33944.24,"total":67006.96,"cpm":1.9740303509520323,"Fuel Spend":30289.07,"Depreciation":27425.36,"Damage":0.0,"Hauling/Towing":0.0,"PM":133.15,"Reg/Insp":0.0,"Rental":0.0,"Repair":6000.99,"Tires":3158.39},{"loc":"356","month":"Jan","year":2026,"monthNum":1,"date":"2026-01","miles":41949.62,"total":111242.81999999999,"cpm":2.6518194920478417,"Fuel Spend":31005.88,"Depreciation":35320.54,"Damage":473.87,"Hauling/Towing":0.0,"PM":7254.17,"Reg/Insp":0.0,"Rental":0.0,"Repair":32265.83,"Tires":4922.53},{"loc":"356","month":"Feb","year":2026,"monthNum":2,"date":"2026-02","miles":43846.47006225586,"total":80316.06,"cpm":1.8317565789438104,"Fuel Spend":21186.129999999997,"Depreciation":32875.64,"Damage":0.0,"Hauling/Towing":0.0,"PM":1523.46,"Reg/Insp":0.0,"Rental":0.0,"Repair":20649.58,"Tires":4081.25},{"loc":"356","month":"Mar","year":2026,"monthNum":3,"date":"2026-03","miles":43686.91245651245,"total":101660.67,"cpm":2.3270280338807816,"Fuel Spend":41460.92999999999,"Depreciation":32305.75,"Damage":0.0,"Hauling/Towing":0.0,"PM":5408.46,"Reg/Insp":0.0,"Rental":0.0,"Repair":15542.29,"Tires":6943.24},{"loc":"356","month":"Apr","year":2026,"monthNum":4,"date":"2026-04","miles":46526.67,"total":89508.18999999999,"cpm":1.9238039171941597,"Fuel Spend":33098.83,"Depreciation":32305.67,"Damage":0.0,"Hauling/Towing":0.0,"PM":3718.15,"Reg/Insp":909.79,"Rental":0.0,"Repair":15203.41,"Tires":4272.34},{"loc":"359","month":"Jan","year":2026,"monthNum":1,"date":"2026-01","miles":223348.24,"total":310714.53,"cpm":1.3911662343970117,"Fuel Spend":119999.2,"Depreciation":102589.53,"Damage":6584.37,"Hauling/Towing":0.0,"PM":13424.26,"Reg/Insp":560.0,"Rental":3943.2,"Repair":40050.69,"Tires":23563.28},{"loc":"359","month":"Feb","year":2026,"monthNum":2,"date":"2026-02","miles":226299.3872756958,"total":352104.7899999999,"cpm":1.5559246281610035,"Fuel Spend":96902.04,"Depreciation":102129.3,"Damage":6965.57,"Hauling/Towing":9908.39,"PM":22123.46,"Reg/Insp":15664.24,"Rental":2128.66,"Repair":70415.53,"Tires":25867.6},{"loc":"359","month":"Mar","year":2026,"monthNum":3,"date":"2026-03","miles":241776.849273682,"total":376487.26,"cpm":1.5571683605398923,"Fuel Spend":161005.66,"Depreciation":38589.52,"Damage":1816.5,"Hauling/Towing":1310.0,"PM":13026.89,"Reg/Insp":200.0,"Rental":2913.46,"Repair":122178.51,"Tires":35446.72},{"loc":"359","month":"Apr","year":2026,"monthNum":4,"date":"2026-04","miles":243575.37,"total":434679.1300000001,"cpm":1.784577521118002,"Fuel Spend":189625.35000000003,"Depreciation":97898.96,"Damage":9104.2,"Hauling/Towing":24080.16,"PM":28179.45,"Reg/Insp":734.46,"Rental":1093.34,"Repair":52096.74,"Tires":31866.47}],"costCols":["Fuel Spend","Depreciation","Damage","Hauling/Towing","PM","Reg/Insp","Rental","Repair","Tires"]};
+const DATA = {"records": [{"loc": "353", "month": "May", "year": 2023, "monthNum": 5, "date": "2023-05", "rollingYear": "Y1", "miles": 12267.49365234375, "total": 15330.3, "cpm": 1.2496684681040033, "Fuel Spend": 1525.8899999999999, "Depreciation": 11469.09, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1578.4, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 467.11, "Tires": 0.0, "onSiteGallons": 0.0, "cardGallons": 447.534, "totalGallons": 447.534, "mpg": 6.972978926002784, "onSiteFuelSpend": 0.0, "cardFuelSpend": 1525.8899999999999, "costPerGallon": 3.4095510061805356}, {"loc": "353", "month": "Jun", "year": 2023, "monthNum": 6, "date": "2023-06", "rollingYear": "Y1", "miles": 9777.24112701416, "total": 13676.089999999998, "cpm": 1.3987677937300187, "Fuel Spend": 64.92, "Depreciation": 11469.14, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1813.56, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 0.0, "Tires": 0.0, "onSiteGallons": 0.0, "cardGallons": 21.648, "totalGallons": 21.648, "mpg": 6.754356932053873, "onSiteFuelSpend": 0.0, "cardFuelSpend": 64.92, "costPerGallon": 2.9988913525498893}, {"loc": "353", "month": "Jul", "year": 2023, "monthNum": 7, "date": "2023-07", "rollingYear": "Y1", "miles": 4980.702507, "total": 13921.71, "cpm": 2.795129799548174, "Fuel Spend": 863.4, "Depreciation": 11469.09, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 133.15, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 1127.58, "Tires": 0.0, "onSiteGallons": 0.0, "cardGallons": 271.36400000000003, "totalGallons": 271.36400000000003, "mpg": 7.190126746277573, "onSiteFuelSpend": 0.0, "cardFuelSpend": 863.4, "costPerGallon": 3.1817042791232435}, {"loc": "353", "month": "Aug", "year": 2023, "monthNum": 8, "date": "2023-08", "rollingYear": "Y1", "miles": 10719.026851654053, "total": 19189.93, "cpm": 1.7902679287568724, "Fuel Spend": 3533.9900000000007, "Depreciation": 14669.699999999999, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 325.25, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 332.5, "Tires": 0.0, "onSiteGallons": 0.0, "cardGallons": 923.3040000000001, "totalGallons": 923.3040000000001, "mpg": 6.347884992027644, "onSiteFuelSpend": 0.0, "cardFuelSpend": 3533.9900000000007, "costPerGallon": 3.827547589959537}, {"loc": "353", "month": "Sep", "year": 2023, "monthNum": 9, "date": "2023-09", "rollingYear": "Y1", "miles": 12006.614181518555, "total": 24058.52, "cpm": 2.003772223899108, "Fuel Spend": 2247.3999999999996, "Depreciation": 19227.19, "Damage": 2273.06, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 50.0, "Tires": 0.0, "onSiteGallons": 0.0, "cardGallons": 590.1789999999999, "totalGallons": 590.1789999999999, "mpg": 6.313672194170311, "onSiteFuelSpend": 0.0, "cardFuelSpend": 2247.3999999999996, "costPerGallon": 3.807997234737258}, {"loc": "353", "month": "Oct", "year": 2023, "monthNum": 10, "date": "2023-10", "rollingYear": "Y1", "miles": 8480.2, "total": 30001.86, "cpm": 3.537871748307823, "Fuel Spend": 841.8499999999999, "Depreciation": 22842.28, "Damage": 4301.67, "Hauling/Towing": 0.0, "PM": 1727.5200000000002, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 0.0, "Tires": 0.0, "onSiteGallons": 0.0, "cardGallons": 236.70600000000002, "totalGallons": 236.70600000000002, "mpg": 6.313672194170311, "onSiteFuelSpend": 0.0, "cardFuelSpend": 841.8499999999999, "costPerGallon": 3.556521592186087}, {"loc": "353", "month": "Nov", "year": 2023, "monthNum": 11, "date": "2023-11", "rollingYear": "Y1", "miles": 19758.22152, "total": 35234.53, "cpm": 1.7832844906781873, "Fuel Spend": 7756.43, "Depreciation": 24158.44, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1754.8400000000001, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 8211.560000000001, "Tires": 0.0, "onSiteGallons": 2185.2, "cardGallons": 204.141, "totalGallons": 2389.341, "mpg": 8.269318410390145, "onSiteFuelSpend": 6975.21, "cardFuelSpend": 781.22, "costPerGallon": 3.246263300215415}, {"loc": "353", "month": "Dec", "year": 2023, "monthNum": 12, "date": "2023-12", "rollingYear": "Y1", "miles": 25280.5919342041, "total": 34398.759999999995, "cpm": 1.3606785825872696, "Fuel Spend": 8493.73, "Depreciation": 24158.409999999996, "Damage": 2529.35, "Hauling/Towing": 0.0, "PM": 1394.53, "Reg/Insp": 328.49, "Rental": 0.0, "Repair": 3291.3900000000003, "Tires": 1178.09, "onSiteGallons": 3298.0, "cardGallons": 427.652, "totalGallons": 3725.652, "mpg": 6.785548391047822, "onSiteFuelSpend": 6975.21, "cardFuelSpend": 1518.5199999999998, "costPerGallon": 2.2797969321879767}, {"loc": "353", "month": "Jan", "year": 2024, "monthNum": 1, "date": "2024-01", "rollingYear": "Y1", "miles": 30926.687167584896, "total": 36459.36, "cpm": 1.1788963946391922, "Fuel Spend": 10138.66, "Depreciation": 26218.320000000003, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 3929.86, "Tires": 3435.7000000000003, "onSiteGallons": 3247.8, "cardGallons": 676.4670000000001, "totalGallons": 3924.2670000000003, "mpg": 7.880882510691778, "onSiteFuelSpend": 7707.88, "cardFuelSpend": 2430.78, "costPerGallon": 2.583580576958703}, {"loc": "353", "month": "Feb", "year": 2024, "monthNum": 2, "date": "2024-02", "rollingYear": "Y1", "miles": 26135.96266067028, "total": 41056.61, "cpm": 1.5708857000236878, "Fuel Spend": 8650.53, "Depreciation": 26218.319999999996, "Damage": 1411.94, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 6566.540000000001, "Tires": 5656.76, "onSiteGallons": 3884.9, "cardGallons": 152.459, "totalGallons": 4037.359, "mpg": 6.4735295178532, "onSiteFuelSpend": 8087.79, "cardFuelSpend": 562.74, "costPerGallon": 2.142620955926882}, {"loc": "353", "month": "Mar", "year": 2024, "monthNum": 3, "date": "2024-03", "rollingYear": "Y1", "miles": 33769.13282966614, "total": 33690.770000000004, "cpm": 0.9976794538947328, "Fuel Spend": 10797.81, "Depreciation": 26218.28, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 2761.22, "Tires": 1410.06, "onSiteGallons": 4112.6, "cardGallons": 730.2559999999999, "totalGallons": 4842.856, "mpg": 6.972978926002784, "onSiteFuelSpend": 8087.79, "cardFuelSpend": 2710.0199999999995, "costPerGallon": 2.2296368093538192}, {"loc": "353", "month": "Apr", "year": 2024, "monthNum": 4, "date": "2024-04", "rollingYear": "Y1", "miles": 32913.10326349735, "total": 51370.99, "cpm": 1.56080663645514, "Fuel Spend": 12515.64, "Depreciation": 26218.309999999998, "Damage": 4030.72, "Hauling/Towing": 0.0, "PM": 1593.24, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 3309.87, "Tires": 454.49, "onSiteGallons": 4749.5, "cardGallons": 123.37, "totalGallons": 4872.87, "mpg": 6.754356932053873, "onSiteFuelSpend": 12073.56, "cardFuelSpend": 442.08, "costPerGallon": 2.568432976869894}, {"loc": "353", "month": "May", "year": 2024, "monthNum": 5, "date": "2024-05", "rollingYear": "Y2", "miles": 35002.565189003944, "total": 46815.17, "cpm": 1.3374782604420943, "Fuel Spend": 12992.539999999999, "Depreciation": 26218.29, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 1472.83, "Tires": 3360.67, "onSiteGallons": 4615.6, "cardGallons": 252.543, "totalGallons": 4868.143, "mpg": 7.190126746277573, "onSiteFuelSpend": 12073.56, "cardFuelSpend": 918.9799999999999, "costPerGallon": 2.6688903756524818}, {"loc": "353", "month": "Jun", "year": 2024, "monthNum": 6, "date": "2024-06", "rollingYear": "Y2", "miles": 31550.607121050358, "total": 56997.219999999994, "cpm": 1.806533223950921, "Fuel Spend": 14278.89, "Depreciation": 26218.349999999995, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 7029.050000000001, "Tires": 6949.61, "onSiteGallons": 4366.6, "cardGallons": 603.655, "totalGallons": 4970.255, "mpg": 6.347884992027644, "onSiteFuelSpend": 12073.56, "cardFuelSpend": 2205.33, "costPerGallon": 2.8728686958717407}, {"loc": "353", "month": "Jul", "year": 2024, "monthNum": 7, "date": "2024-07", "rollingYear": "Y2", "miles": 34661.61207526922, "total": 65636.09, "cpm": 1.8936248509581242, "Fuel Spend": 14792.21, "Depreciation": 27639.579999999994, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 2960.1200000000003, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 16038.279999999999, "Tires": 2176.4, "onSiteGallons": 4700.2, "cardGallons": 789.729, "totalGallons": 5489.929, "mpg": 6.313672194170311, "onSiteFuelSpend": 12073.56, "cardFuelSpend": 2718.6500000000005, "costPerGallon": 2.6944264670818145}, {"loc": "353", "month": "Aug", "year": 2024, "monthNum": 8, "date": "2024-08", "rollingYear": "Y2", "miles": 32424.157928466797, "total": 65707.93999999999, "cpm": 2.0265118417250148, "Fuel Spend": 15395.97, "Depreciation": 27754.57, "Damage": 2593.63, "Hauling/Towing": 0.0, "PM": 3148.1600000000003, "Reg/Insp": 640.31, "Rental": 0.0, "Repair": 11527.35, "Tires": 2590.62, "onSiteGallons": 4554.6, "cardGallons": 938.159, "totalGallons": 5492.759, "mpg": 5.9030731056044505, "onSiteFuelSpend": 12073.56, "cardFuelSpend": 3322.4100000000003, "costPerGallon": 2.8029574936748545}, {"loc": "353", "month": "Sep", "year": 2024, "monthNum": 9, "date": "2024-09", "rollingYear": "Y2", "miles": 29196.013458251953, "total": 71172.78, "cpm": 2.43775678832905, "Fuel Spend": 15022.4, "Depreciation": 27754.55, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 640.31, "Rental": 6556.06, "Repair": 14381.210000000001, "Tires": 6759.15, "onSiteGallons": 5334.4, "cardGallons": 317.34299999999996, "totalGallons": 5651.7429999999995, "mpg": 5.165842370796399, "onSiteFuelSpend": 13970.31, "cardFuelSpend": 1052.0900000000001, "costPerGallon": 2.658011873505218}, {"loc": "353", "month": "Oct", "year": 2024, "monthNum": 10, "date": "2024-10", "rollingYear": "Y2", "miles": 33489.0, "total": 75393.47999999998, "cpm": 2.25129087162949, "Fuel Spend": 38572.840000000004, "Depreciation": 29271.53, "Damage": 1348.25, "Hauling/Towing": 0.0, "PM": 1755.5300000000002, "Reg/Insp": 640.31, "Rental": 9585.960000000001, "Repair": 11749.72, "Tires": 3553.48, "onSiteGallons": 5489.1, "cardGallons": 746.9849999999999, "totalGallons": 6236.085, "mpg": 5.370196204830434, "onSiteFuelSpend": 36149.65, "cardFuelSpend": 2423.1900000000005, "costPerGallon": 6.185425631626253}, {"loc": "353", "month": "Nov", "year": 2024, "monthNum": 11, "date": "2024-11", "rollingYear": "Y2", "miles": 36859.0, "total": 70824.71, "cpm": 1.9215038389538512, "Fuel Spend": 21685.16, "Depreciation": 29271.540000000008, "Damage": 1062.65, "Hauling/Towing": 0.0, "PM": 4789.959999999999, "Reg/Insp": 640.31, "Rental": 4762.860000000001, "Repair": 12296.92, "Tires": 1231.9699999999998, "onSiteGallons": 5177.1, "cardGallons": 670.6139999999999, "totalGallons": 5847.714, "mpg": 6.303146836524495, "onSiteFuelSpend": 19674.39, "cardFuelSpend": 2010.77, "costPerGallon": 3.708314052294623}, {"loc": "353", "month": "Dec", "year": 2024, "monthNum": 12, "date": "2024-12", "rollingYear": "Y2", "miles": 34586.53707885742, "total": 78670.51999999999, "cpm": 2.274599501552611, "Fuel Spend": 16473.0, "Depreciation": 29271.570000000003, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1638.82, "Reg/Insp": 640.31, "Rental": 392.18, "Repair": 28118.709999999992, "Tires": 3759.4300000000003, "onSiteGallons": 4646.0, "cardGallons": 670.0200000000001, "totalGallons": 5316.02, "mpg": 6.506096116804944, "onSiteFuelSpend": 14417.99, "cardFuelSpend": 2055.01, "costPerGallon": 3.0987468068216444}, {"loc": "353", "month": "Jan", "year": 2025, "monthNum": 1, "date": "2025-01", "rollingYear": "Y2", "miles": 33377.67, "total": 63145.86, "cpm": 1.8918594377618332, "Fuel Spend": 22568.67, "Depreciation": 29271.570000000003, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 3523.13, "Reg/Insp": 643.32, "Rental": 0.0, "Repair": 8181.8899999999985, "Tires": 5245.349999999999, "onSiteGallons": 4805.6, "cardGallons": 652.8399999999999, "totalGallons": 5458.4400000000005, "mpg": 6.1148734803350395, "onSiteFuelSpend": 20382.75, "cardFuelSpend": 2185.92, "costPerGallon": 4.134637368918591}, {"loc": "353", "month": "Feb", "year": 2025, "monthNum": 2, "date": "2025-02", "rollingYear": "Y2", "miles": 32393.54, "total": 56009.84, "cpm": 1.7290435068226564, "Fuel Spend": 15726.71, "Depreciation": 29214.649999999998, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 939.63, "Reg/Insp": 643.32, "Rental": 0.0, "Repair": 8558.42, "Tires": 1620.75, "onSiteGallons": 4397.6, "cardGallons": 419.71600000000007, "totalGallons": 4817.316000000001, "mpg": 6.724395908427016, "onSiteFuelSpend": 14358.32, "cardFuelSpend": 1368.3899999999999, "costPerGallon": 3.2646207971409797}, {"loc": "353", "month": "Mar", "year": 2025, "monthNum": 3, "date": "2025-03", "rollingYear": "Y2", "miles": 39095.31, "total": 56901.74, "cpm": 1.4554620490283874, "Fuel Spend": 23436.52, "Depreciation": 29214.769999999997, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 643.32, "Rental": 0.0, "Repair": 3939.4399999999996, "Tires": 5362.570000000001, "onSiteGallons": 5609.1, "cardGallons": 563.64, "totalGallons": 6172.740000000001, "mpg": 6.333542316702144, "onSiteFuelSpend": 21507.34, "cardFuelSpend": 1929.18, "costPerGallon": 3.7967774440523976}, {"loc": "353", "month": "Apr", "year": 2025, "monthNum": 4, "date": "2025-04", "rollingYear": "Y2", "miles": 28794.3, "total": 74827.66999999998, "cpm": 2.598697311620702, "Fuel Spend": 17796.48, "Depreciation": 29214.68999999999, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1913.5, "Reg/Insp": 643.32, "Rental": 11581.27, "Repair": 13782.300000000001, "Tires": 1225.8700000000001, "onSiteGallons": 5265.1, "cardGallons": 348.807, "totalGallons": 5613.907, "mpg": 5.129101711161228, "onSiteFuelSpend": 16626.44, "cardFuelSpend": 1170.0400000000002, "costPerGallon": 3.1700703271358073}, {"loc": "353", "month": "May", "year": 2025, "monthNum": 5, "date": "2025-05", "rollingYear": "Y3", "miles": 25100.0, "total": 84075.12000000001, "cpm": 3.3496063745019926, "Fuel Spend": 14662.09, "Depreciation": 28464.900000000005, "Damage": 12446.05, "Hauling/Towing": 0.0, "PM": 1545.42, "Reg/Insp": 643.32, "Rental": 18332.040000000005, "Repair": 5378.469999999999, "Tires": 2524.91, "onSiteGallons": 4698.7, "cardGallons": 423.25, "totalGallons": 5121.95, "mpg": 4.900477357256514, "onSiteFuelSpend": 13309.73, "cardFuelSpend": 1352.36, "costPerGallon": 2.8625992053807634}, {"loc": "353", "month": "Jun", "year": 2025, "monthNum": 6, "date": "2025-06", "rollingYear": "Y3", "miles": 34544.39, "total": 67878.23, "cpm": 1.964956683270424, "Fuel Spend": 19783.43, "Depreciation": 27154.839999999993, "Damage": 2937.44, "Hauling/Towing": 0.0, "PM": 1453.3300000000002, "Reg/Insp": 643.32, "Rental": 12884.390000000001, "Repair": 6405.1500000000015, "Tires": 2090.45, "onSiteGallons": 4264.6, "cardGallons": 465.596, "totalGallons": 4730.196, "mpg": 7.302951082788113, "onSiteFuelSpend": 18294.78, "cardFuelSpend": 1488.65, "costPerGallon": 4.182370032869674}, {"loc": "353", "month": "Jul", "year": 2025, "monthNum": 7, "date": "2025-07", "rollingYear": "Y3", "miles": 36966.01, "total": 102677.68999999999, "cpm": 2.7776243635707503, "Fuel Spend": 23986.170000000002, "Depreciation": 27154.809999999998, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 3856.15, "Reg/Insp": 643.32, "Rental": 1392.26, "Repair": 14376.28, "Tires": 3214.75, "onSiteGallons": 4899.0, "cardGallons": 192.206, "totalGallons": 5091.206, "mpg": 7.260757077988988, "onSiteFuelSpend": 23376.27, "cardFuelSpend": 609.9000000000001, "costPerGallon": 4.7112943377266605}, {"loc": "353", "month": "Aug", "year": 2025, "monthNum": 8, "date": "2025-08", "rollingYear": "Y3", "miles": 32278.0, "total": 89664.95999999999, "cpm": 2.777897019641861, "Fuel Spend": 15191.13, "Depreciation": 27425.34, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 266.3, "Reg/Insp": 643.32, "Rental": 1496.86, "Repair": 16848.800000000003, "Tires": 6110.98, "onSiteGallons": 4751.8, "cardGallons": 140.872, "totalGallons": 4892.6720000000005, "mpg": 6.597213138342402, "onSiteFuelSpend": 14749.07, "cardFuelSpend": 442.06, "costPerGallon": 3.104873982968815}, {"loc": "353", "month": "Sep", "year": 2025, "monthNum": 9, "date": "2025-09", "rollingYear": "Y3", "miles": 25658.0, "total": 83802.82, "cpm": 3.2661477901629126, "Fuel Spend": 18801.329999999998, "Depreciation": 27425.369999999995, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1488.4299999999998, "Reg/Insp": 643.32, "Rental": 5705.03, "Repair": 12226.800000000001, "Tires": 2968.9700000000003, "onSiteGallons": 4581.6, "cardGallons": 121.519, "totalGallons": 4703.119000000001, "mpg": 5.455528554561345, "onSiteFuelSpend": 18441.76, "cardFuelSpend": 359.57, "costPerGallon": 3.9976300833553213}, {"loc": "353", "month": "Oct", "year": 2025, "monthNum": 10, "date": "2025-10", "rollingYear": "Y3", "miles": 28609.16, "total": 98509.34999999999, "cpm": 3.4432800543602116, "Fuel Spend": 17974.46, "Depreciation": 27425.339999999993, "Damage": 849.74, "Hauling/Towing": 0.0, "PM": 623.8, "Reg/Insp": 834.48, "Rental": 13606.340000000002, "Repair": 1953.55, "Tires": 1715.1100000000001, "onSiteGallons": 5252.3, "cardGallons": 102.71100000000001, "totalGallons": 5355.011, "mpg": 5.342502564420502, "onSiteFuelSpend": 17606.07, "cardFuelSpend": 368.39, "costPerGallon": 3.3565682684872167}, {"loc": "353", "month": "Nov", "year": 2025, "monthNum": 11, "date": "2025-11", "rollingYear": "Y3", "miles": 26880.52, "total": 70146.54999999999, "cpm": 2.6095681928772207, "Fuel Spend": 17339.43, "Depreciation": 27425.379999999997, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 643.32, "Rental": 9318.13, "Repair": 4573.0599999999995, "Tires": 3218.17, "onSiteGallons": 4381.5, "cardGallons": 322.87199999999996, "totalGallons": 4704.372, "mpg": 5.713944390452116, "onSiteFuelSpend": 16165.94, "cardFuelSpend": 1173.49, "costPerGallon": 3.685811836308863}, {"loc": "353", "month": "Dec", "year": 2025, "monthNum": 12, "date": "2025-12", "rollingYear": "Y3", "miles": 24441.631481170654, "total": 77614.12, "cpm": 3.1754885126957406, "Fuel Spend": 17976.74, "Depreciation": 27425.370000000003, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 2438.63, "Reg/Insp": 643.32, "Rental": 10567.849999999999, "Repair": 19143.81, "Tires": 800.06, "onSiteGallons": 4324.3, "cardGallons": 200.73600000000002, "totalGallons": 4525.036, "mpg": 5.401422548057221, "onSiteFuelSpend": 17283.75, "cardFuelSpend": 692.99, "costPerGallon": 3.9727286147557725}, {"loc": "356", "month": "May", "year": 2023, "monthNum": 5, "date": "2023-05", "rollingYear": "Y1", "miles": 41249.55976867676, "total": 60308.01, "cpm": 1.4620279668001561, "Fuel Spend": 26092.170000000006, "Depreciation": 22419.360000000004, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 3527.12, "Reg/Insp": 969.6899999999999, "Rental": 0.0, "Repair": 5484.83, "Tires": 1814.84, "onSiteGallons": 0.0, "cardGallons": 6296.219999999997, "totalGallons": 6296.219999999997, "mpg": 6.5514800576658345, "onSiteFuelSpend": 0.0, "cardFuelSpend": 26092.170000000006, "costPerGallon": 4.144100746161986}, {"loc": "356", "month": "Jun", "year": 2023, "monthNum": 6, "date": "2023-06", "rollingYear": "Y1", "miles": 39583.01786887646, "total": 64311.06, "cpm": 1.6247134115200155, "Fuel Spend": 24598.839999999993, "Depreciation": 22419.30999999999, "Damage": 1363.81, "Hauling/Towing": 0.0, "PM": 5972.259999999999, "Reg/Insp": 826.03, "Rental": 0.0, "Repair": 5657.44, "Tires": 3473.37, "onSiteGallons": 0.0, "cardGallons": 6178.95, "totalGallons": 6178.95, "mpg": 6.40610748895467, "onSiteFuelSpend": 0.0, "cardFuelSpend": 24598.839999999993, "costPerGallon": 3.981071217601695}, {"loc": "356", "month": "Jul", "year": 2023, "monthNum": 7, "date": "2023-07", "rollingYear": "Y1", "miles": 35360.28891, "total": 60672.98999999999, "cpm": 1.7158510823943374, "Fuel Spend": 20906.86, "Depreciation": 22419.39, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 826.03, "Rental": 0.0, "Repair": 14408.109999999999, "Tires": 2112.59, "onSiteGallons": 0.0, "cardGallons": 5392.1860000000015, "totalGallons": 5392.1860000000015, "mpg": 6.557690871568598, "onSiteFuelSpend": 0.0, "cardFuelSpend": 20906.86, "costPerGallon": 3.8772512669258803}, {"loc": "356", "month": "Aug", "year": 2023, "monthNum": 8, "date": "2023-08", "rollingYear": "Y1", "miles": 53061.828746795654, "total": 64142.78, "cpm": 1.208830933929572, "Fuel Spend": 34718.21999999998, "Depreciation": 21645.78, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 826.03, "Rental": 0.0, "Repair": 2715.24, "Tires": 4237.51, "onSiteGallons": 0.0, "cardGallons": 8145.663999999997, "totalGallons": 8145.663999999997, "mpg": 6.5141195053952226, "onSiteFuelSpend": 0.0, "cardFuelSpend": 34718.21999999998, "costPerGallon": 4.26217187450894}, {"loc": "356", "month": "Sep", "year": 2023, "monthNum": 9, "date": "2023-09", "rollingYear": "Y1", "miles": 48134.892486572266, "total": 71875.39, "cpm": 1.4932076563804604, "Fuel Spend": 34251.189999999995, "Depreciation": 23515.74, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 826.03, "Rental": 5663.17, "Repair": 2525.92, "Tires": 5093.339999999999, "onSiteGallons": 0.0, "cardGallons": 7616.984000000003, "totalGallons": 7616.984000000003, "mpg": 6.319416252754666, "onSiteFuelSpend": 0.0, "cardFuelSpend": 34251.189999999995, "costPerGallon": 4.496686615069689}, {"loc": "356", "month": "Oct", "year": 2023, "monthNum": 10, "date": "2023-10", "rollingYear": "Y1", "miles": 46107.58, "total": 76290.4, "cpm": 1.6546173102123336, "Fuel Spend": 33337.200000000004, "Depreciation": 23515.649999999998, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1353.6, "Reg/Insp": 826.03, "Rental": 3168.9799999999996, "Repair": 8768.37, "Tires": 5320.57, "onSiteGallons": 0.0, "cardGallons": 7345.180000000002, "totalGallons": 7345.180000000002, "mpg": 6.277256649939142, "onSiteFuelSpend": 0.0, "cardFuelSpend": 33337.200000000004, "costPerGallon": 4.53864983567455}, {"loc": "356", "month": "Nov", "year": 2023, "monthNum": 11, "date": "2023-11", "rollingYear": "Y1", "miles": 49826.59882, "total": 80155.53000000001, "cpm": 1.608689573405645, "Fuel Spend": 36803.210000000014, "Depreciation": 23515.650000000005, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1292.29, "Reg/Insp": 826.03, "Rental": 13372.14, "Repair": 1630.44, "Tires": 2715.7700000000004, "onSiteGallons": 0.0, "cardGallons": 8540.231000000002, "totalGallons": 8540.231000000002, "mpg": 5.834338534871011, "onSiteFuelSpend": 0.0, "cardFuelSpend": 36803.210000000014, "costPerGallon": 4.309392802138491}, {"loc": "356", "month": "Dec", "year": 2023, "monthNum": 12, "date": "2023-12", "rollingYear": "Y1", "miles": 40007.13205718994, "total": 87421.72, "cpm": 2.185153384027408, "Fuel Spend": 27072.809999999994, "Depreciation": 23515.689999999995, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 5363.250000000001, "Reg/Insp": 826.03, "Rental": 12286.64, "Repair": 6194.21, "Tires": 12163.09, "onSiteGallons": 0.0, "cardGallons": 6656.9580000000005, "totalGallons": 6656.9580000000005, "mpg": 6.00982191222927, "onSiteFuelSpend": 0.0, "cardFuelSpend": 27072.809999999994, "costPerGallon": 4.066844044982707}, {"loc": "356", "month": "Jan", "year": 2024, "monthNum": 1, "date": "2024-01", "rollingYear": "Y1", "miles": 37320.979537546635, "total": 59148.920000000006, "cpm": 1.5848705133929684, "Fuel Spend": 24243.089999999997, "Depreciation": 23515.640000000003, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 3275.3999999999996, "Reg/Insp": 1126.32, "Rental": 1559.76, "Repair": 4558.59, "Tires": 870.12, "onSiteGallons": 0.0, "cardGallons": 6109.928000000003, "totalGallons": 6109.928000000003, "mpg": 6.108251936446161, "onSiteFuelSpend": 0.0, "cardFuelSpend": 24243.089999999997, "costPerGallon": 3.9678192607179636}, {"loc": "356", "month": "Feb", "year": 2024, "monthNum": 2, "date": "2024-02", "rollingYear": "Y1", "miles": 43590.89241409302, "total": 73140.98999999999, "cpm": 1.6778961372296515, "Fuel Spend": 31429.89, "Depreciation": 23515.67, "Damage": 1504.12, "Hauling/Towing": 1363.33, "PM": 2249.52, "Reg/Insp": 1126.32, "Rental": 5348.129999999999, "Repair": 5752.61, "Tires": 851.4, "onSiteGallons": 0.0, "cardGallons": 7755.512999999999, "totalGallons": 7755.512999999999, "mpg": 5.620633014746159, "onSiteFuelSpend": 0.0, "cardFuelSpend": 31429.89, "costPerGallon": 4.052586850154207}, {"loc": "356", "month": "Mar", "year": 2024, "monthNum": 3, "date": "2024-03", "rollingYear": "Y1", "miles": 47165.39633053541, "total": 97295.37000000001, "cpm": 2.0628549226673174, "Fuel Spend": 39700.78999999999, "Depreciation": 23515.65, "Damage": 5544.88, "Hauling/Towing": 0.0, "PM": 3904.4000000000005, "Reg/Insp": 1126.32, "Rental": 13516.69, "Repair": 7526.03, "Tires": 2460.6099999999997, "onSiteGallons": 0.0, "cardGallons": 9813.642000000002, "totalGallons": 9813.642000000002, "mpg": 4.806105249257656, "onSiteFuelSpend": 0.0, "cardFuelSpend": 39700.78999999999, "costPerGallon": 4.045469561657129}, {"loc": "356", "month": "Apr", "year": 2024, "monthNum": 4, "date": "2024-04", "rollingYear": "Y1", "miles": 51402.15273666382, "total": 88883.03, "cpm": 1.7291694076579414, "Fuel Spend": 38043.03999999999, "Depreciation": 23515.689999999995, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1659.98, "Reg/Insp": 1126.32, "Rental": 5112.0999999999985, "Repair": 12538.3, "Tires": 6887.5999999999985, "onSiteGallons": 0.0, "cardGallons": 9444.901, "totalGallons": 9444.901, "mpg": 5.4423177899550055, "onSiteFuelSpend": 0.0, "cardFuelSpend": 38043.03999999999, "costPerGallon": 4.02789187520335}, {"loc": "356", "month": "May", "year": 2024, "monthNum": 5, "date": "2024-05", "rollingYear": "Y2", "miles": 60361.11539268494, "total": 99022.19, "cpm": 1.6404963585547052, "Fuel Spend": 38442.36999999999, "Depreciation": 23515.67000000001, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 1126.32, "Rental": 24331.079999999994, "Repair": 8628.980000000001, "Tires": 2977.7700000000004, "onSiteGallons": 0.0, "cardGallons": 10094.833000000002, "totalGallons": 10094.833000000002, "mpg": 5.979407028594225, "onSiteFuelSpend": 0.0, "cardFuelSpend": 38442.36999999999, "costPerGallon": 3.8081234231413217}, {"loc": "356", "month": "Jun", "year": 2024, "monthNum": 6, "date": "2024-06", "rollingYear": "Y2", "miles": 55755.4710855484, "total": 98281.90000000001, "cpm": 1.7627310483880798, "Fuel Spend": 34713.61000000001, "Depreciation": 30140.189999999995, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 7165.09, "Reg/Insp": 1126.32, "Rental": 13715.450000000003, "Repair": 6727.61, "Tires": 6014.3, "onSiteGallons": 0.0, "cardGallons": 9397.678000000005, "totalGallons": 9397.678000000005, "mpg": 5.932898646404821, "onSiteFuelSpend": 0.0, "cardFuelSpend": 34713.61000000001, "costPerGallon": 3.6938496935093954}, {"loc": "356", "month": "Jul", "year": 2024, "monthNum": 7, "date": "2024-07", "rollingYear": "Y2", "miles": 50564.099448919296, "total": 72115.96999999999, "cpm": 1.4262287034866061, "Fuel Spend": 24534.620000000006, "Depreciation": 27352.089999999997, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 7350.329999999998, "Reg/Insp": 1126.32, "Rental": 6094.5, "Repair": 440.56, "Tires": 2510.61, "onSiteGallons": 0.0, "cardGallons": 6568.078999999999, "totalGallons": 6568.078999999999, "mpg": 7.698460912074795, "onSiteFuelSpend": 0.0, "cardFuelSpend": 24534.620000000006, "costPerGallon": 3.7354331456731886}, {"loc": "356", "month": "Aug", "year": 2024, "monthNum": 8, "date": "2024-08", "rollingYear": "Y2", "miles": 44778.21603012085, "total": 85235.26, "cpm": 1.9034983426464558, "Fuel Spend": 35204.9, "Depreciation": 27352.05, "Damage": 189.1, "Hauling/Towing": 0.0, "PM": 7120.79, "Reg/Insp": 1126.32, "Rental": 19929.86, "Repair": 4605.7, "Tires": 1995.0900000000001, "onSiteGallons": 3773.8, "cardGallons": 3853.1780000000012, "totalGallons": 7626.978000000001, "mpg": 5.871029919074219, "onSiteFuelSpend": 21314.76, "cardFuelSpend": 13890.140000000001, "costPerGallon": 4.61583867162066}, {"loc": "356", "month": "Sep", "year": 2024, "monthNum": 9, "date": "2024-09", "rollingYear": "Y2", "miles": 48646.122113227844, "total": 92908.26, "cpm": 1.9098800883603504, "Fuel Spend": 21076.23, "Depreciation": 29731.620000000003, "Damage": 3083.63, "Hauling/Towing": 0.0, "PM": 8036.79, "Reg/Insp": 1126.32, "Rental": 5377.240000000001, "Repair": 21181.039999999997, "Tires": 5326.54, "onSiteGallons": 5164.1, "cardGallons": 2349.6189999999997, "totalGallons": 7513.719, "mpg": 6.47430681307457, "onSiteFuelSpend": 13142.96, "cardFuelSpend": 7933.27, "costPerGallon": 2.8050330335749845}, {"loc": "356", "month": "Oct", "year": 2024, "monthNum": 10, "date": "2024-10", "rollingYear": "Y2", "miles": 45643.0, "total": 96285.95, "cpm": 2.109544727559538, "Fuel Spend": 26918.25, "Depreciation": 32605.909999999996, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 0.0, "Reg/Insp": 1126.32, "Rental": 8302.779999999999, "Repair": 30700.640000000003, "Tires": 4046.5, "onSiteGallons": 4545.7, "cardGallons": 2819.0350000000008, "totalGallons": 7364.735000000001, "mpg": 6.197507445956982, "onSiteFuelSpend": 17442.29, "cardFuelSpend": 9475.960000000001, "costPerGallon": 3.6550194949309103}, {"loc": "356", "month": "Nov", "year": 2024, "monthNum": 11, "date": "2024-11", "rollingYear": "Y2", "miles": 33693.0, "total": 79360.59999999998, "cpm": 2.3554031994776357, "Fuel Spend": 21634.94, "Depreciation": 32545.559999999994, "Damage": 0.0, "Hauling/Towing": 2401.9, "PM": 5946.84, "Reg/Insp": 1126.32, "Rental": 9292.05, "Repair": 11703.199999999999, "Tires": 2478.6800000000003, "onSiteGallons": 3861.3, "cardGallons": 1416.46, "totalGallons": 5277.76, "mpg": 6.383958345964954, "onSiteFuelSpend": 16976.92, "cardFuelSpend": 4658.02, "costPerGallon": 4.099265597526223}, {"loc": "356", "month": "Dec", "year": 2024, "monthNum": 12, "date": "2024-12", "rollingYear": "Y2", "miles": 36279.19531059265, "total": 74208.79, "cpm": 2.045491620326342, "Fuel Spend": 17184.75, "Depreciation": 32545.43, "Damage": 3161.54, "Hauling/Towing": 0.0, "PM": 2092.56, "Reg/Insp": 1126.32, "Rental": 7167.49, "Repair": 7859.59, "Tires": 6098.26, "onSiteGallons": 5237.3, "cardGallons": 735.886, "totalGallons": 5973.186, "mpg": 6.073675808955665, "onSiteFuelSpend": 14769.65, "cardFuelSpend": 2415.1, "costPerGallon": 2.8769822336019675}, {"loc": "356", "month": "Jan", "year": 2025, "monthNum": 1, "date": "2025-01", "rollingYear": "Y2", "miles": 34566.98, "total": 135087.56, "cpm": 3.9079942766189, "Fuel Spend": 23592.1, "Depreciation": 32545.449999999997, "Damage": 40579.74, "Hauling/Towing": 0.0, "PM": 6116.2, "Reg/Insp": 1220.1699999999998, "Rental": 5486.75, "Repair": 33545.34999999999, "Tires": 1518.7, "onSiteGallons": 5941.4, "cardGallons": 0.0, "totalGallons": 5941.4, "mpg": 5.817985659945468, "onSiteFuelSpend": 23592.1, "cardFuelSpend": 0.0, "costPerGallon": 3.9707981283872487}, {"loc": "356", "month": "Feb", "year": 2025, "monthNum": 2, "date": "2025-02", "rollingYear": "Y2", "miles": 40432.81, "total": 114892.2, "cpm": 2.8415586252847627, "Fuel Spend": 24336.64, "Depreciation": 32545.499999999996, "Damage": 35764.31, "Hauling/Towing": 0.0, "PM": 3648.8, "Reg/Insp": 1121.87, "Rental": 766.3, "Repair": 22924.010000000002, "Tires": 442.33, "onSiteGallons": 6623.1, "cardGallons": 373.79600000000005, "totalGallons": 6996.896000000001, "mpg": 5.778678145280421, "onSiteFuelSpend": 22947.26, "cardFuelSpend": 1389.38, "costPerGallon": 3.478205192702592}, {"loc": "356", "month": "Mar", "year": 2025, "monthNum": 3, "date": "2025-03", "rollingYear": "Y2", "miles": 43805.61, "total": 107598.33999999998, "cpm": 2.45626850076965, "Fuel Spend": 29899.33, "Depreciation": 35347.929999999986, "Damage": -1455.35, "Hauling/Towing": 0.0, "PM": 4937.64, "Reg/Insp": 1161.87, "Rental": 17122.28, "Repair": 29930.690000000002, "Tires": 3587.7, "onSiteGallons": 6970.4, "cardGallons": 223.858, "totalGallons": 7194.258, "mpg": 6.088968452340742, "onSiteFuelSpend": 29104.91, "cardFuelSpend": 794.4200000000001, "costPerGallon": 4.155999131529618}, {"loc": "356", "month": "Apr", "year": 2025, "monthNum": 4, "date": "2025-04", "rollingYear": "Y2", "miles": 43177.89, "total": 143831.88999999998, "cpm": 3.3311467975855233, "Fuel Spend": 22204.8, "Depreciation": 35002.98999999999, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 2481.6600000000003, "Reg/Insp": 1121.87, "Rental": 7090.9, "Repair": 71721.97, "Tires": 9650.66, "onSiteGallons": 6803.0, "cardGallons": 287.633, "totalGallons": 7090.633, "mpg": 6.089426712678543, "onSiteFuelSpend": 21188.8, "cardFuelSpend": 1016.0, "costPerGallon": 3.131568084259896}, {"loc": "356", "month": "May", "year": 2025, "monthNum": 5, "date": "2025-05", "rollingYear": "Y3", "miles": 50520.0, "total": 108320.45, "cpm": 2.144110253365004, "Fuel Spend": 28269.670000000002, "Depreciation": 34858.380000000005, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 7323.85, "Reg/Insp": 1313.03, "Rental": 13978.359999999997, "Repair": 29765.699999999997, "Tires": 1530.13, "onSiteGallons": 7884.0, "cardGallons": 248.642, "totalGallons": 8132.642, "mpg": 6.212003430127626, "onSiteFuelSpend": 27449.88, "cardFuelSpend": 819.79, "costPerGallon": 3.4760745646986555}, {"loc": "356", "month": "Jun", "year": 2025, "monthNum": 6, "date": "2025-06", "rollingYear": "Y3", "miles": 49573.63, "total": 86431.82000000002, "cpm": 1.7435039556312504, "Fuel Spend": 27206.440000000002, "Depreciation": 35307.700000000004, "Damage": 558.18, "Hauling/Towing": 0.0, "PM": 1986.98, "Reg/Insp": 1121.87, "Rental": 0.0, "Repair": 21261.04, "Tires": 7737.83, "onSiteGallons": 7903.9, "cardGallons": 113.12, "totalGallons": 8017.0199999999995, "mpg": 6.183548251095794, "onSiteFuelSpend": 26846.83, "cardFuelSpend": 359.61, "costPerGallon": 3.393585147598485}, {"loc": "356", "month": "Jul", "year": 2025, "monthNum": 7, "date": "2025-07", "rollingYear": "Y3", "miles": 44313.75, "total": 90994.42000000001, "cpm": 2.0534127669177176, "Fuel Spend": 23393.32, "Depreciation": 35320.61999999999, "Damage": 6297.030000000001, "Hauling/Towing": 0.0, "PM": 2722.26, "Reg/Insp": 1121.87, "Rental": 226.39, "Repair": 27455.230000000003, "Tires": 802.82, "onSiteGallons": 7404.5, "cardGallons": 0.0, "totalGallons": 7404.5, "mpg": 5.984705246809373, "onSiteFuelSpend": 23393.32, "cardFuelSpend": 0.0, "costPerGallon": 3.1593382402593018}, {"loc": "356", "month": "Aug", "year": 2025, "monthNum": 8, "date": "2025-08", "rollingYear": "Y3", "miles": 54269.0, "total": 76571.91, "cpm": 1.4109696143286223, "Fuel Spend": 32563.6, "Depreciation": 35320.62, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 2426.88, "Reg/Insp": 1121.87, "Rental": 0.0, "Repair": 11829.160000000002, "Tires": 6552.05, "onSiteGallons": 8801.9, "cardGallons": 63.787, "totalGallons": 8865.687, "mpg": 6.121240237784168, "onSiteFuelSpend": 32345.85, "cardFuelSpend": 217.75, "costPerGallon": 3.6729922903887764}, {"loc": "356", "month": "Sep", "year": 2025, "monthNum": 9, "date": "2025-09", "rollingYear": "Y3", "miles": 48371.0, "total": 89916.98000000001, "cpm": 1.858902648280995, "Fuel Spend": 24216.87, "Depreciation": 35320.54999999999, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 4976.4400000000005, "Reg/Insp": 1121.87, "Rental": 0.0, "Repair": 29608.22, "Tires": 2333.66, "onSiteGallons": 7881.9, "cardGallons": 0.0, "totalGallons": 7881.9, "mpg": 6.136972049886449, "onSiteFuelSpend": 24216.87, "cardFuelSpend": 0.0, "costPerGallon": 3.072466029764397}, {"loc": "356", "month": "Oct", "year": 2025, "monthNum": 10, "date": "2025-10", "rollingYear": "Y3", "miles": 59068.85, "total": 97741.01, "cpm": 1.654696341641999, "Fuel Spend": 30425.64, "Depreciation": 35320.63, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 7481.56, "Reg/Insp": 1121.87, "Rental": 0.0, "Repair": 27069.5, "Tires": 5348.869999999999, "onSiteGallons": 9818.3, "cardGallons": 45.505, "totalGallons": 9863.804999999998, "mpg": 5.988444621522831, "onSiteFuelSpend": 30275.52, "cardFuelSpend": 150.12, "costPerGallon": 3.0845743605028693}, {"loc": "356", "month": "Nov", "year": 2025, "monthNum": 11, "date": "2025-11", "rollingYear": "Y3", "miles": 46767.28, "total": 84925.67000000001, "cpm": 1.8159206607696667, "Fuel Spend": 30806.45, "Depreciation": 35320.57, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1051.6599999999999, "Reg/Insp": 1121.87, "Rental": 0.0, "Repair": 25295.449999999997, "Tires": 4533.0, "onSiteGallons": 7778.0, "cardGallons": 0.0, "totalGallons": 7778.0, "mpg": 6.01276420673695, "onSiteFuelSpend": 30806.45, "cardFuelSpend": 0.0, "costPerGallon": 3.960716122396503}, {"loc": "356", "month": "Dec", "year": 2025, "monthNum": 12, "date": "2025-12", "rollingYear": "Y3", "miles": 47209.002784729004, "total": 109081.11999999998, "cpm": 2.310599961143114, "Fuel Spend": 28495.104, "Depreciation": 35320.65999999999, "Damage": 8320.98, "Hauling/Towing": 0.0, "PM": 2151.89, "Reg/Insp": 1121.87, "Rental": 5239.89, "Repair": 31322.82, "Tires": 7090.919999999999, "onSiteGallons": 7575.4, "cardGallons": 235.234, "totalGallons": 7810.634, "mpg": 6.044196000571657, "onSiteFuelSpend": 28259.87, "cardFuelSpend": 235.234, "costPerGallon": 3.648244687947227}, {"loc": "359", "month": "May", "year": 2023, "monthNum": 5, "date": "2023-05", "rollingYear": "Y1", "miles": 225419.20787072182, "total": 285565.42, "cpm": 1.26681937487675, "Fuel Spend": 149165.99, "Depreciation": 87122.70999999998, "Damage": 440.0, "Hauling/Towing": 962.5, "PM": 5816.33, "Reg/Insp": 2518.84, "Rental": 0.0, "Repair": 52716.04, "Tires": 28723.8, "onSiteGallons": 36867.7, "cardGallons": 4333.795, "totalGallons": 41201.494999999995, "mpg": 5.471141468791894, "onSiteFuelSpend": 134116.79, "cardFuelSpend": 15049.199999999997, "costPerGallon": 3.6204023664675278}, {"loc": "359", "month": "Jun", "year": 2023, "monthNum": 6, "date": "2023-06", "rollingYear": "Y1", "miles": 218674.69105529785, "total": 269334.61, "cpm": 1.231667957092901, "Fuel Spend": 132189.5, "Depreciation": 89736.75000000001, "Damage": 1826.67, "Hauling/Towing": 0.0, "PM": 35458.340000000004, "Reg/Insp": 2398.84, "Rental": 0.0, "Repair": 37125.2, "Tires": 9086.880000000001, "onSiteGallons": 35870.7, "cardGallons": 2026.7209999999998, "totalGallons": 37897.420999999995, "mpg": 5.770173412467774, "onSiteFuelSpend": 125123.97, "cardFuelSpend": 7065.53, "costPerGallon": 3.4880869597960245}, {"loc": "359", "month": "Jul", "year": 2023, "monthNum": 7, "date": "2023-07", "rollingYear": "Y1", "miles": 205414.4765, "total": 304049.04999999993, "cpm": 1.4801734287700017, "Fuel Spend": 152706.78000000003, "Depreciation": 92350.41000000002, "Damage": 10674.08, "Hauling/Towing": 0.0, "PM": 19737.21, "Reg/Insp": 2398.84, "Rental": 3227.11, "Repair": 61015.78, "Tires": 28308.600000000002, "onSiteGallons": 33480.9, "cardGallons": 1481.72, "totalGallons": 34962.62, "mpg": 5.875259820345271, "onSiteFuelSpend": 147418.64, "cardFuelSpend": 5288.14, "costPerGallon": 4.367715577379499}, {"loc": "359", "month": "Aug", "year": 2023, "monthNum": 8, "date": "2023-08", "rollingYear": "Y1", "miles": 233636.29492986202, "total": 309590.20000000007, "cpm": 1.3250946309217047, "Fuel Spend": 158619.3, "Depreciation": 92350.24, "Damage": 26995.16, "Hauling/Towing": 1500.0, "PM": 13842.38, "Reg/Insp": 2398.84, "Rental": 0.0, "Repair": 44251.92000000001, "Tires": 27318.28, "onSiteGallons": 38567.8, "cardGallons": 1637.727, "totalGallons": 40205.527, "mpg": 5.811049185597343, "onSiteFuelSpend": 152016.52, "cardFuelSpend": 6602.779999999999, "costPerGallon": 3.94521131385742}, {"loc": "359", "month": "Sep", "year": 2023, "monthNum": 9, "date": "2023-09", "rollingYear": "Y1", "miles": 218010.25304412842, "total": 270055.9700000001, "cpm": 1.238730592846644, "Fuel Spend": 142503.79, "Depreciation": 93075.10000000005, "Damage": 1254.48, "Hauling/Towing": 1237.5, "PM": 17714.7, "Reg/Insp": 2438.84, "Rental": 0.0, "Repair": 27241.590000000007, "Tires": 11446.119999999999, "onSiteGallons": 36005.5, "cardGallons": 1645.9830000000004, "totalGallons": 37651.483, "mpg": 5.790216896479972, "onSiteFuelSpend": 135582.23, "cardFuelSpend": 6921.5599999999995, "costPerGallon": 3.7848121413969276}, {"loc": "359", "month": "Oct", "year": 2023, "monthNum": 10, "date": "2023-10", "rollingYear": "Y1", "miles": 223004.81, "total": 285490.68, "cpm": 1.280199651299001, "Fuel Spend": 121462.32, "Depreciation": 101166.56000000001, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 16957.25, "Reg/Insp": 3138.84, "Rental": 1745.08, "Repair": 46993.34000000001, "Tires": 2435.3100000000004, "onSiteGallons": 37110.1, "cardGallons": 1588.272, "totalGallons": 38698.371999999996, "mpg": 5.76264060927421, "onSiteFuelSpend": 115080.55, "cardFuelSpend": 6381.769999999999, "costPerGallon": 3.1386932762959647}, {"loc": "359", "month": "Nov", "year": 2023, "monthNum": 11, "date": "2023-11", "rollingYear": "Y1", "miles": 196956.3935, "total": 233753.72999999998, "cpm": 1.186829865464611, "Fuel Spend": 136628.94999999998, "Depreciation": 104300.36000000002, "Damage": 1813.33, "Hauling/Towing": 2900.0, "PM": 15583.25, "Reg/Insp": 2398.84, "Rental": 206.12, "Repair": 23804.06, "Tires": 4790.56, "onSiteGallons": 33775.5, "cardGallons": 474.688, "totalGallons": 34250.188, "mpg": 5.750520070138009, "onSiteFuelSpend": 134751.86, "cardFuelSpend": 1877.09, "costPerGallon": 3.989144526739531}, {"loc": "359", "month": "Dec", "year": 2023, "monthNum": 12, "date": "2023-12", "rollingYear": "Y1", "miles": 200731.76708984375, "total": 326657.4699999999, "cpm": 1.6273332055797336, "Fuel Spend": 98700.46, "Depreciation": 109764.74999999996, "Damage": 3699.3599999999997, "Hauling/Towing": 3025.0, "PM": 32980.93, "Reg/Insp": 2458.84, "Rental": 7033.83, "Repair": 69240.98, "Tires": 12599.52, "onSiteGallons": 33099.0, "cardGallons": 1780.4070000000002, "totalGallons": 34879.407, "mpg": 5.7550223571703425, "onSiteFuelSpend": 92418.85, "cardFuelSpend": 6281.61, "costPerGallon": 2.829763132154168}, {"loc": "359", "month": "Jan", "year": 2024, "monthNum": 1, "date": "2024-01", "rollingYear": "Y1", "miles": 211950.12030029297, "total": 276763.5900000001, "cpm": 1.305795861818237, "Fuel Spend": 149836.17, "Depreciation": 110345.75000000003, "Damage": 2296.63, "Hauling/Towing": 1375.0, "PM": 8838.2, "Reg/Insp": 4165.54, "Rental": 5645.39, "Repair": 34540.18, "Tires": 13386.759999999998, "onSiteGallons": 36809.5, "cardGallons": 1654.6280000000002, "totalGallons": 38464.128, "mpg": 5.510332128166093, "onSiteFuelSpend": 144065.6, "cardFuelSpend": 5770.569999999999, "costPerGallon": 3.8954781452474374}, {"loc": "359", "month": "Feb", "year": 2024, "monthNum": 2, "date": "2024-02", "rollingYear": "Y1", "miles": 219070.7993927002, "total": 260436.36000000004, "cpm": 1.1888227948314969, "Fuel Spend": 122650.97, "Depreciation": 110345.65000000004, "Damage": 322.0, "Hauling/Towing": 0.0, "PM": 18186.25, "Reg/Insp": 3925.54, "Rental": 0.0, "Repair": 23149.379999999997, "Tires": 16982.030000000002, "onSiteGallons": 41226.9, "cardGallons": 1889.945, "totalGallons": 43116.845, "mpg": 5.08086339324457, "onSiteFuelSpend": 115789.51, "cardFuelSpend": 6861.46, "costPerGallon": 2.8446183852273976}, {"loc": "359", "month": "Mar", "year": 2024, "monthNum": 3, "date": "2024-03", "rollingYear": "Y1", "miles": 223701.40213012695, "total": 320240.74, "cpm": 1.4315544603234813, "Fuel Spend": 149451.75, "Depreciation": 110345.75000000001, "Damage": 1110.79, "Hauling/Towing": 1862.78, "PM": 30140.339999999997, "Reg/Insp": 4285.54, "Rental": 7549.719999999999, "Repair": 39283.89, "Tires": 26705.910000000003, "onSiteGallons": 30932.0, "cardGallons": 1667.6620000000003, "totalGallons": 32599.662, "mpg": 6.862077347002154, "onSiteFuelSpend": 143448.43, "cardFuelSpend": 6003.319999999999, "costPerGallon": 4.584457041303066}, {"loc": "359", "month": "Apr", "year": 2024, "monthNum": 4, "date": "2024-04", "rollingYear": "Y1", "miles": 223408.80355072021, "total": 292970.89999999997, "cpm": 1.311366854589896, "Fuel Spend": 139390.61000000002, "Depreciation": 110345.56000000001, "Damage": 6358.18, "Hauling/Towing": 0.0, "PM": 16552.559999999998, "Reg/Insp": 4245.54, "Rental": 13220.75, "Repair": 38441.09, "Tires": 9785.54, "onSiteGallons": 30947.9, "cardGallons": 2196.691, "totalGallons": 33144.591, "mpg": 6.740430242470641, "onSiteFuelSpend": 131697.19, "cardFuelSpend": 7693.42, "costPerGallon": 4.205531152881024}, {"loc": "359", "month": "May", "year": 2024, "monthNum": 5, "date": "2024-05", "rollingYear": "Y2", "miles": 234362.35646820068, "total": 310320.18, "cpm": 1.324104197775062, "Fuel Spend": 139419.25, "Depreciation": 110345.86000000004, "Damage": 3527.11, "Hauling/Towing": 0.0, "PM": 36266.149999999994, "Reg/Insp": 3925.54, "Rental": 1114.16, "Repair": 36035.26000000001, "Tires": 22627.54, "onSiteGallons": 36817.9, "cardGallons": 1988.3110000000004, "totalGallons": 38806.211, "mpg": 6.039300164301036, "onSiteFuelSpend": 132499.79, "cardFuelSpend": 6919.46, "costPerGallon": 3.5927045286642385}, {"loc": "359", "month": "Jun", "year": 2024, "monthNum": 6, "date": "2024-06", "rollingYear": "Y2", "miles": 202681.5093460083, "total": 277157.65, "cpm": 1.367454045977374, "Fuel Spend": 89746.54, "Depreciation": 110345.59999999999, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 9432.35, "Reg/Insp": 3765.54, "Rental": 0.0, "Repair": 49949.69000000001, "Tires": 18987.48, "onSiteGallons": 32833.5, "cardGallons": 782.838, "totalGallons": 33616.338, "mpg": 6.029256052399529, "onSiteFuelSpend": 87156.95999999999, "cardFuelSpend": 2589.58, "costPerGallon": 2.669729820065469}, {"loc": "359", "month": "Jul", "year": 2024, "monthNum": 7, "date": "2024-07", "rollingYear": "Y2", "miles": 257431.80666351318, "total": 295305.63999999996, "cpm": 1.1471218099556413, "Fuel Spend": 134730.56, "Depreciation": 110345.84, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 15684.55, "Reg/Insp": 3845.54, "Rental": 0.0, "Repair": 61344.960000000014, "Tires": 13126.350000000002, "onSiteGallons": 39940.2, "cardGallons": 1643.5150000000003, "totalGallons": 41583.715, "mpg": 6.19068802928053, "onSiteFuelSpend": 129079.15, "cardFuelSpend": 5651.409999999999, "costPerGallon": 3.2399837292074554}, {"loc": "359", "month": "Aug", "year": 2024, "monthNum": 8, "date": "2024-08", "rollingYear": "Y2", "miles": 275270.1270747185, "total": 346945.81, "cpm": 1.2603830778405756, "Fuel Spend": 117816.2, "Depreciation": 110551.57000000002, "Damage": 6123.16, "Hauling/Towing": 0.0, "PM": 45740.45000000001, "Reg/Insp": 3805.54, "Rental": 1125.12, "Repair": 46154.420000000006, "Tires": 20257.07, "onSiteGallons": 43341.2, "cardGallons": 1151.7469999999998, "totalGallons": 44492.947, "mpg": 6.1868261294249285, "onSiteFuelSpend": 114269.98, "cardFuelSpend": 3546.22, "costPerGallon": 2.6479747453006426}, {"loc": "359", "month": "Sep", "year": 2024, "monthNum": 9, "date": "2024-09", "rollingYear": "Y2", "miles": 240087.80004882812, "total": 287836.98000000004, "cpm": 1.198882158699696, "Fuel Spend": 100716.37, "Depreciation": 110551.81999999999, "Damage": 3560.89, "Hauling/Towing": 1411.11, "PM": 10388.640000000001, "Reg/Insp": 3845.54, "Rental": 6091.950000000001, "Repair": 64529.59, "Tires": 9292.93, "onSiteGallons": 37906.0, "cardGallons": 1235.159, "totalGallons": 39141.159, "mpg": 6.133896036364895, "onSiteFuelSpend": 97045.86, "cardFuelSpend": 3670.5100000000007, "costPerGallon": 2.573157580745118}, {"loc": "359", "month": "Oct", "year": 2024, "monthNum": 10, "date": "2024-10", "rollingYear": "Y2", "miles": 257712.0, "total": 283974.26, "cpm": 1.1019054603588503, "Fuel Spend": 135411.68, "Depreciation": 110551.49, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 21733.96, "Reg/Insp": 4365.54, "Rental": 780.48, "Repair": 48691.04000000001, "Tires": 12022.12, "onSiteGallons": 38506.4, "cardGallons": 1745.3649999999998, "totalGallons": 40251.765, "mpg": 6.402501853024333, "onSiteFuelSpend": 130370.86, "cardFuelSpend": 5040.82, "costPerGallon": 3.3641178219141445}, {"loc": "359", "month": "Nov", "year": 2024, "monthNum": 11, "date": "2024-11", "rollingYear": "Y2", "miles": 235628.0, "total": 294043.0800000001, "cpm": 1.247912302442834, "Fuel Spend": 117263.81, "Depreciation": 110551.85000000003, "Damage": 5423.07, "Hauling/Towing": 0.0, "PM": 40287.95, "Reg/Insp": 3805.54, "Rental": 186.2, "Repair": 34640.469999999994, "Tires": 12280.9, "onSiteGallons": 38477.7, "cardGallons": 944.5669999999999, "totalGallons": 39422.267, "mpg": 5.977028160252682, "onSiteFuelSpend": 114510.43, "cardFuelSpend": 2753.38, "costPerGallon": 2.9745577543777477}, {"loc": "359", "month": "Dec", "year": 2024, "monthNum": 12, "date": "2024-12", "rollingYear": "Y2", "miles": 230605.72258758545, "total": 288911.04, "cpm": 1.2528355183825493, "Fuel Spend": 117003.8, "Depreciation": 110551.38000000002, "Damage": 391.77, "Hauling/Towing": 0.0, "PM": 20232.879999999997, "Reg/Insp": 3805.54, "Rental": 3146.12, "Repair": 51202.69, "Tires": 18478.670000000002, "onSiteGallons": 37317.9, "cardGallons": 1693.22, "totalGallons": 39011.12, "mpg": 5.911281772673674, "onSiteFuelSpend": 111930.11, "cardFuelSpend": 5073.69, "costPerGallon": 2.9992422673330066}, {"loc": "359", "month": "Jan", "year": 2025, "monthNum": 1, "date": "2025-01", "rollingYear": "Y2", "miles": 233167.55, "total": 274641.82, "cpm": 1.1778732503729614, "Fuel Spend": 121168.48999999999, "Depreciation": 110551.67000000003, "Damage": 624.49, "Hauling/Towing": 250.0, "PM": 6734.8099999999995, "Reg/Insp": 4369.0599999999995, "Rental": 2501.42, "Repair": 43994.13, "Tires": 9375.83, "onSiteGallons": 40274.8, "cardGallons": 1791.924, "totalGallons": 42066.724, "mpg": 5.542802667495572, "onSiteFuelSpend": 115435.59, "cardFuelSpend": 5732.899999999998, "costPerGallon": 2.880388071103421}, {"loc": "359", "month": "Feb", "year": 2025, "monthNum": 2, "date": "2025-02", "rollingYear": "Y2", "miles": 229174.7, "total": 256856.38000000006, "cpm": 1.120788551266785, "Fuel Spend": 133461.83, "Depreciation": 110551.64000000004, "Damage": 927.0, "Hauling/Towing": 0.0, "PM": 8411.93, "Reg/Insp": 4209.0599999999995, "Rental": 4538.36, "Repair": 36171.73000000001, "Tires": 4646.92, "onSiteGallons": 39376.0, "cardGallons": 1215.5160000000003, "totalGallons": 40591.516, "mpg": 5.64587683790869, "onSiteFuelSpend": 129495.78, "cardFuelSpend": 3966.0499999999997, "costPerGallon": 3.287924254910804}, {"loc": "359", "month": "Mar", "year": 2025, "monthNum": 3, "date": "2025-03", "rollingYear": "Y2", "miles": 256640.02, "total": 354550.2699999999, "cpm": 1.3815081139722476, "Fuel Spend": 132582.77000000002, "Depreciation": 110551.61999999992, "Damage": 42581.55, "Hauling/Towing": 0.0, "PM": 29060.339999999997, "Reg/Insp": 3609.06, "Rental": 5451.27, "Repair": 49433.979999999996, "Tires": 19336.08, "onSiteGallons": 46448.6, "cardGallons": 1288.6439999999998, "totalGallons": 47737.244, "mpg": 5.376096282391166, "onSiteFuelSpend": 128465.24, "cardFuelSpend": 4117.530000000001, "costPerGallon": 2.7773444566678385}, {"loc": "359", "month": "Apr", "year": 2025, "monthNum": 4, "date": "2025-04", "rollingYear": "Y2", "miles": 251269.7, "total": 306345.4000000001, "cpm": 1.2191895799612928, "Fuel Spend": 113784.34, "Depreciation": 110551.72000000004, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 14353.230000000003, "Reg/Insp": 4329.0599999999995, "Rental": 718.07, "Repair": 71782.31000000001, "Tires": 6832.660000000001, "onSiteGallons": 43695.1, "cardGallons": 860.3760000000001, "totalGallons": 44555.475999999995, "mpg": 5.63947964555468, "onSiteFuelSpend": 111100.89, "cardFuelSpend": 2683.4500000000003, "costPerGallon": 2.5537678017400154}, {"loc": "359", "month": "May", "year": 2025, "monthNum": 5, "date": "2025-05", "rollingYear": "Y3", "miles": 248222.0, "total": 335638.2, "cpm": 1.352169428978898, "Fuel Spend": 126463.09999999999, "Depreciation": 107592.98, "Damage": 17871.36, "Hauling/Towing": 0.0, "PM": 26191.730000000003, "Reg/Insp": 3649.06, "Rental": 9388.02, "Repair": 48651.79999999998, "Tires": 33359.020000000004, "onSiteGallons": 42342.2, "cardGallons": 1622.9600000000003, "totalGallons": 43965.159999999996, "mpg": 5.645879601029543, "onSiteFuelSpend": 121525.48, "cardFuelSpend": 4937.62, "costPerGallon": 2.8764389803198713}, {"loc": "359", "month": "Jun", "year": 2025, "monthNum": 6, "date": "2025-06", "rollingYear": "Y3", "miles": 234224.96, "total": 296892.36000000004, "cpm": 1.2675521857277723, "Fuel Spend": 111030.3, "Depreciation": 105804.77000000008, "Damage": 429.74, "Hauling/Towing": 0.0, "PM": 10383.91, "Reg/Insp": 3883.5, "Rental": 5087.01, "Repair": 69492.38999999998, "Tires": 17244.420000000002, "onSiteGallons": 38391.6, "cardGallons": 2781.566999999999, "totalGallons": 41173.167, "mpg": 5.688776867710954, "onSiteFuelSpend": 102313.75, "cardFuelSpend": 8716.550000000001, "costPerGallon": 2.69666649641015}, {"loc": "359", "month": "Jul", "year": 2025, "monthNum": 7, "date": "2025-07", "rollingYear": "Y3", "miles": 237221.11, "total": 325817.3599999999, "cpm": 1.373475404444402, "Fuel Spend": 130419.26, "Depreciation": 105804.65999999993, "Damage": 3702.63, "Hauling/Towing": 9949.06, "PM": 8377.35, "Reg/Insp": 3729.06, "Rental": 593.69, "Repair": 89289.13999999998, "Tires": 14974.44, "onSiteGallons": 35065.7, "cardGallons": 1568.6949999999997, "totalGallons": 36634.395, "mpg": 6.475365841308421, "onSiteFuelSpend": 125107.65, "cardFuelSpend": 5311.61, "costPerGallon": 3.560022214096889}, {"loc": "359", "month": "Aug", "year": 2025, "monthNum": 8, "date": "2025-08", "rollingYear": "Y3", "miles": 254336.0, "total": 341862.6100000001, "cpm": 1.3441377154630099, "Fuel Spend": 120993.38, "Depreciation": 105940.40000000005, "Damage": 11319.1, "Hauling/Towing": 0.0, "PM": 29169.260000000013, "Reg/Insp": 3769.06, "Rental": 4674.89, "Repair": 53227.21000000001, "Tires": 36117.79000000001, "onSiteGallons": 43944.9, "cardGallons": 1610.3070000000005, "totalGallons": 45555.207, "mpg": 5.583028082827063, "onSiteFuelSpend": 115704.36, "cardFuelSpend": 5289.0199999999995, "costPerGallon": 2.6559725653315547}, {"loc": "359", "month": "Sep", "year": 2025, "monthNum": 9, "date": "2025-09", "rollingYear": "Y3", "miles": 261927.0, "total": 309885.22, "cpm": 1.1830976569807616, "Fuel Spend": 122581.77, "Depreciation": 105395.58999999995, "Damage": 4689.97, "Hauling/Towing": 2630.4300000000003, "PM": 6809.43, "Reg/Insp": 4129.0599999999995, "Rental": 0.0, "Repair": 60518.96999999999, "Tires": 34224.64000000001, "onSiteGallons": 40203.2, "cardGallons": 2445.817, "totalGallons": 42649.017, "mpg": 6.141454561543587, "onSiteFuelSpend": 114580.38, "cardFuelSpend": 8001.390000000001, "costPerGallon": 2.8741991872872474}, {"loc": "359", "month": "Oct", "year": 2025, "monthNum": 10, "date": "2025-10", "rollingYear": "Y3", "miles": 288906.49, "total": 366433.69000000006, "cpm": 1.268347035056222, "Fuel Spend": 132286.27, "Depreciation": 105376.01000000002, "Damage": 0.0, "Hauling/Towing": 29428.76, "PM": 19311.29, "Reg/Insp": 3809.06, "Rental": 5968.790000000001, "Repair": 70006.46000000002, "Tires": 29459.05000000001, "onSiteGallons": 45708.3, "cardGallons": 2525.3810000000003, "totalGallons": 48233.681000000004, "mpg": 5.989725105160437, "onSiteFuelSpend": 123643.44, "cardFuelSpend": 8642.83, "costPerGallon": 2.742611952009219}, {"loc": "359", "month": "Nov", "year": 2025, "monthNum": 11, "date": "2025-11", "rollingYear": "Y3", "miles": 248795.39, "total": 295443.22000000003, "cpm": 1.1874947522138575, "Fuel Spend": 143344.91999999998, "Depreciation": 105508.69999999998, "Damage": 900.0, "Hauling/Towing": 0.0, "PM": 21252.42, "Reg/Insp": 3649.06, "Rental": 6910.28, "Repair": 44422.57000000001, "Tires": 20175.190000000006, "onSiteGallons": 39522.6, "cardGallons": 3203.961, "totalGallons": 42726.561, "mpg": 5.8229678255640565, "onSiteFuelSpend": 132344.52, "cardFuelSpend": 11000.4, "costPerGallon": 3.354936991067453}, {"loc": "359", "month": "Dec", "year": 2025, "monthNum": 12, "date": "2025-12", "rollingYear": "Y3", "miles": 232632.39054870605, "total": 327127.10000000003, "cpm": 1.4061975601437569, "Fuel Spend": 103223.56999999999, "Depreciation": 105508.71000000004, "Damage": 3552.04, "Hauling/Towing": 1518.0, "PM": 9446.7, "Reg/Insp": 3649.06, "Rental": 12345.929999999997, "Repair": 88198.95, "Tires": 17750.73, "onSiteGallons": 37830.2, "cardGallons": 2696.277, "totalGallons": 40526.477, "mpg": 5.7402569324914685, "onSiteFuelSpend": 94360.98, "cardFuelSpend": 8862.59, "costPerGallon": 2.5470649718701184}, {"loc": "353", "month": "Jan", "year": 2026, "monthNum": 1, "date": "2026-01", "rollingYear": "Y3", "miles": 29785.82, "total": 50726.21568183796, "cpm": 1.7030323718412976, "Fuel Spend": 17515.350000000002, "Depreciation": 27425.35, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1336.38, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 1048.63, "Tires": 3397.31, "onSiteGallons": 5019.6, "cardGallons": 461.343, "totalGallons": 5480.943, "mpg": 5.434433454243184, "onSiteFuelSpend": 16031.7, "cardFuelSpend": 1483.6499999999999, "costPerGallon": 3.1956818379610956}, {"loc": "353", "month": "Feb", "year": 2026, "monthNum": 2, "date": "2026-02", "rollingYear": "Y3", "miles": 29413.300079345703, "total": 72235.18223529085, "cpm": 2.4558679930653233, "Fuel Spend": 22465.16, "Depreciation": 27425.32, "Damage": 868.25, "Hauling/Towing": 7777.57, "PM": 681.95, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 9517.34, "Tires": 3495.01, "onSiteGallons": 4673.0, "cardGallons": 229.664, "totalGallons": 4902.664, "mpg": 5.99945255872026, "onSiteFuelSpend": 21686.51, "cardFuelSpend": 778.65, "costPerGallon": 4.582235290854116}, {"loc": "353", "month": "Mar", "year": 2026, "monthNum": 3, "date": "2026-03", "rollingYear": "Y3", "miles": 27866.207946777344, "total": 84606.30663751216, "cpm": 3.0361614611900096, "Fuel Spend": 24467.48, "Depreciation": 27425.35, "Damage": 15370.22, "Hauling/Towing": 0.0, "PM": 1398.03, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 12957.61, "Tires": 2982.88, "onSiteGallons": 4894.0, "cardGallons": 271.58000000000004, "totalGallons": 5165.58, "mpg": 5.394594207577338, "onSiteFuelSpend": 23150.12, "cardFuelSpend": 1317.3600000000001, "costPerGallon": 4.736637512147716}, {"loc": "353", "month": "Apr", "year": 2026, "monthNum": 4, "date": "2026-04", "rollingYear": "Y3", "miles": 33944.24, "total": 68267.04553975968, "cpm": 2.011152570797275, "Fuel Spend": 31543.31, "Depreciation": 27425.36, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 133.15, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 6000.99, "Tires": 3158.39, "onSiteGallons": 5149.3, "cardGallons": 246.833, "totalGallons": 5396.133, "mpg": 6.290475049447447, "onSiteFuelSpend": 30289.07, "cardFuelSpend": 1254.24, "costPerGallon": 5.84553975967605}, {"loc": "356", "month": "Jan", "year": 2026, "monthNum": 1, "date": "2026-01", "rollingYear": "Y3", "miles": 41949.62, "total": 111542.5589569972, "cpm": 2.6589647047338496, "Fuel Spend": 31301.47, "Depreciation": 35320.54, "Damage": 473.87, "Hauling/Towing": 0.0, "PM": 7254.17, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 32265.83, "Tires": 4922.53, "onSiteGallons": 7465.5, "cardGallons": 78.919, "totalGallons": 7544.419, "mpg": 5.5603513007429735, "onSiteFuelSpend": 31005.88, "cardFuelSpend": 295.59, "costPerGallon": 4.148956997218739}, {"loc": "356", "month": "Feb", "year": 2026, "monthNum": 2, "date": "2026-02", "rollingYear": "Y3", "miles": 43846.47006225586, "total": 80544.51240300717, "cpm": 1.8369668593308703, "Fuel Spend": 21411.58, "Depreciation": 32875.64, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 1523.46, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 20649.58, "Tires": 4081.25, "onSiteGallons": 7069.1, "cardGallons": 62.381, "totalGallons": 7131.481000000001, "mpg": 6.14829795693992, "onSiteFuelSpend": 21186.13, "cardFuelSpend": 225.45, "costPerGallon": 3.0024030071734047}, {"loc": "356", "month": "Mar", "year": 2026, "monthNum": 3, "date": "2026-03", "rollingYear": "Y3", "miles": 43686.91245651245, "total": 101665.91934859402, "cpm": 2.3271481922600046, "Fuel Spend": 41460.93, "Depreciation": 32305.75, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 5408.46, "Reg/Insp": 0.0, "Rental": 0.0, "Repair": 15542.29, "Tires": 6943.24, "onSiteGallons": 7898.3, "cardGallons": 0.0, "totalGallons": 7898.3, "mpg": 5.531179172291816, "onSiteFuelSpend": 41460.93, "cardFuelSpend": 0.0, "costPerGallon": 5.2493485940012405}, {"loc": "356", "month": "Apr", "year": 2026, "monthNum": 4, "date": "2026-04", "rollingYear": "Y3", "miles": 46526.67, "total": 89512.3817415972, "cpm": 1.9238940105018736, "Fuel Spend": 33098.82999999999, "Depreciation": 32305.67, "Damage": 0.0, "Hauling/Towing": 0.0, "PM": 3718.15, "Reg/Insp": 909.79, "Rental": 0.0, "Repair": 15203.41, "Tires": 4272.34, "onSiteGallons": 7896.2, "cardGallons": 0.0, "totalGallons": 7896.2, "mpg": 5.892286162964464, "onSiteFuelSpend": 33098.82999999999, "cardFuelSpend": 0.0, "costPerGallon": 4.19174159722398}, {"loc": "359", "month": "Jan", "year": 2026, "monthNum": 1, "date": "2026-01", "rollingYear": "Y3", "miles": 223348.24, "total": 321679.8866474804, "cpm": 1.440261569320987, "Fuel Spend": 130961.20999999999, "Depreciation": 102589.53, "Damage": 6584.37, "Hauling/Towing": 0.0, "PM": 13424.26, "Reg/Insp": 560.0, "Rental": 3943.2, "Repair": 40050.69, "Tires": 23563.28, "onSiteGallons": 35668.4, "cardGallons": 3463.66, "totalGallons": 39132.06, "mpg": 5.707551301924815, "onSiteFuelSpend": 119999.2, "cardFuelSpend": 10962.010000000002, "costPerGallon": 3.346647480352427}, {"loc": "359", "month": "Feb", "year": 2026, "monthNum": 2, "date": "2026-02", "rollingYear": "Y3", "miles": 226299.3872756958, "total": 361947.67187036714, "cpm": 1.599419584063716, "Fuel Spend": 106742.15000000001, "Depreciation": 102129.3, "Damage": 6965.57, "Hauling/Towing": 9908.39, "PM": 22123.46, "Reg/Insp": 15664.24, "Rental": 2128.66, "Repair": 70415.53, "Tires": 25867.6, "onSiteGallons": 35536.8, "cardGallons": 2972.27, "totalGallons": 38509.07, "mpg": 5.876521746063871, "onSiteFuelSpend": 96902.04000000001, "cardFuelSpend": 9840.110000000002, "costPerGallon": 2.771870367162853}, {"loc": "359", "month": "Mar", "year": 2026, "monthNum": 3, "date": "2026-03", "rollingYear": "Y3", "miles": 241776.849273682, "total": 391567.18258263206, "cpm": 1.61953960339434, "Fuel Spend": 176081.44, "Depreciation": 38589.52, "Damage": 1816.5, "Hauling/Towing": 1310.0, "PM": 13026.89, "Reg/Insp": 200.0, "Rental": 2913.46, "Repair": 122178.51, "Tires": 35446.72, "onSiteGallons": 39243.6, "cardGallons": 3261.632999999999, "totalGallons": 42505.233, "mpg": 5.68816666111869, "onSiteFuelSpend": 161005.66, "cardFuelSpend": 15075.78, "costPerGallon": 4.142582632119673}, {"loc": "359", "month": "Apr", "year": 2026, "monthNum": 4, "date": "2026-04", "rollingYear": "Y3", "miles": 243575.37, "total": 440864.12651572574, "cpm": 1.8099700577924844, "Fuel Spend": 195805.69, "Depreciation": 97898.96, "Damage": 9104.2, "Hauling/Towing": 24080.16, "PM": 28179.45, "Reg/Insp": 734.46, "Rental": 1093.34, "Repair": 52096.74, "Tires": 31866.47, "onSiteGallons": 40693.1, "cardGallons": 1356.7290000000003, "totalGallons": 42049.829, "mpg": 5.792541272878898, "onSiteFuelSpend": 188778.25, "cardFuelSpend": 7027.44, "costPerGallon": 4.656515725664426}], "costCols": ["Fuel Spend", "Depreciation", "Damage", "Hauling/Towing", "PM", "Reg/Insp", "Rental", "Repair", "Tires"]};
 
 const LOC_COLORS = { '353': '#2d5e2e', '356': '#f5c518', '359': '#8b6332' };
 const LOC_BG     = { '353': 'rgba(45,94,46,0.1)', '356': 'rgba(245,197,24,0.1)', '359': 'rgba(139,99,50,0.1)' };
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const YEARS = [2023, 2024, 2025, 2026];
+const YEARS = ['Y1','Y2','Y3'];
+const YEAR_LABELS = {
+  'Y1': 'Y1 (May 23–Apr 24)',
+  'Y2': 'Y2 (May 24–Apr 25)',
+  'Y3': 'Y3 (May 25–Apr 26)'
+};
 const COST_COLS = DATA.costCols;
 const COST_COLORS = ['#2d5e2e','#f5c518','#8b6332','#4a8a4c','#d4a414','#1f4220','#a67c2d','#5a7a2d','#b8941d'];
 
@@ -471,6 +657,8 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    // If this panel is dirty (data changed while it was hidden), refresh it now
+    if (typeof refreshActivePanel === 'function') refreshActivePanel();
   });
 });
 
@@ -482,11 +670,14 @@ function sortedDates() {
 }
 function sum(arr, key) { return arr.reduce((s,r) => s + (r[key]||0), 0); }
 function cpm(arr) { const m = sum(arr,'miles'); return m ? sum(arr,'total')/m : 0; }
-function ytdRecords(loc, year, throughMonth) {
-  return DATA.records.filter(r => r.loc===loc && r.year===year && r.monthNum<=throughMonth);
+function ryRecords(loc, ry) {
+  return DATA.records.filter(r => r.loc===loc && r.rollingYear===ry);
 }
 
 // ========== PANEL 1: EXECUTIVE SUMMARY ==========
+// Module-level chart instances so we can destroy before recreating on toggle/refresh
+let mileshareChart = null, spendshareChart = null;
+
 function buildSummary() {
   const all = DATA.records;
   const totalMiles = sum(all, 'miles');
@@ -501,12 +692,12 @@ function buildSummary() {
   const best = locStats.reduce((a,b) => a.cpm < b.cpm ? a : b);
   const worst = locStats.reduce((a,b) => a.cpm > b.cpm ? a : b);
 
-  // 2026 YTD vs 2025 YTD (Jan-Apr)
-  const ytdAll26 = DATA.records.filter(r => r.year===2026);
-  const ytdAll25 = DATA.records.filter(r => r.year===2025 && r.monthNum<=4);
-  const cpm26 = cpm(ytdAll26);
-  const cpm25 = cpm(ytdAll25);
-  const ytdDelta = ((cpm26 - cpm25) / cpm25) * 100;
+  // Y3 vs Y2 comparison
+  const ryY3 = DATA.records.filter(r => r.rollingYear==='Y3');
+  const ryY2 = DATA.records.filter(r => r.rollingYear==='Y2');
+  const cpmY3 = cpm(ryY3);
+  const cpmY2 = cpm(ryY2);
+  const yoyDelta = ((cpmY3 - cpmY2) / cpmY2) * 100;
 
   // Biggest cost category
   const catSums = COST_COLS.map(c => ({ cat: c, val: sum(all, c) }));
@@ -518,20 +709,20 @@ function buildSummary() {
     <div class="callout">
       <strong>Headline:</strong> Location <strong>359</strong> drives ${(locStats.find(l=>l.loc==='359').miles/totalMiles*100).toFixed(0)}% of fleet miles
       at $${cpm(locRecords('359')).toFixed(2)}/mi — roughly ${((1 - cpm(locRecords('359'))/cpm(locRecords('353')))*100).toFixed(0)}% lower CPM than Location 353.
-      Fleet-wide 2026 YTD CPM is <strong>${ytdDelta>=0?'up':'down'} ${Math.abs(ytdDelta).toFixed(1)}%</strong> versus the same Jan–Apr period in 2025.
+      Fleet-wide Y3 CPM is <strong>${yoyDelta>=0?'up':'down'} ${Math.abs(yoyDelta).toFixed(1)}%</strong> versus Y2.
     </div>
   `;
 
   // KPIs
   const tiles = [
-    {label:'Total Fleet Miles', value: fmtN(totalMiles), sub: 'Jan 2023 – Apr 2026 YTD'},
+    {label:'Total Fleet Miles', value: fmtN(totalMiles), sub: 'May 2023 – Apr 2026'},
     {label:'Total Fleet Spend', value: fmt$(totalSpend), sub: 'All cost categories combined'},
     {label:'Blended CPM', value: fmt$d(blendedCpm), sub: 'Cost per mile, fleet-wide', accent:true},
     {label:'Best Location (CPM)', value: best.loc, sub: fmt$d(best.cpm) + ' per mile'},
     {label:'Highest-Cost Location', value: worst.loc, sub: fmt$d(worst.cpm) + ' per mile'},
     {label:'Top Cost Category', value: topCat.cat, sub: fmt$(topCat.val) + ' (' + (topCat.val/totalSpend*100).toFixed(1) + '%)'},
-    {label:'2026 YTD CPM', value: fmt$d(cpm26), delta: {val: ytdDelta, label:'vs 2025 Jan-Apr'}, accent:true},
-    {label:'Months of Data', value: '40', sub: 'Per location, all aligned'},
+    {label:'Y3 CPM', value: fmt$d(cpmY3), delta: {val: yoyDelta, label:'vs Y2'}, accent:true},
+    {label:'Months of Data', value: '36', sub: '3 rolling years × 12 mo each'},
   ];
   document.getElementById('kpi-tiles').innerHTML = tiles.map(t => {
     let deltaHtml = '';
@@ -550,37 +741,40 @@ function buildSummary() {
     `;
   }).join('');
 
-  // Snapshot table
+  // Snapshot table — Y1/Y2/Y3 CPMs with Y3 vs Y2 delta
   const rows = ['353','356','359'].map(loc => {
     const r = locRecords(loc);
-    const r25 = ytdRecords(loc, 2025, 4);
-    const r26 = ytdRecords(loc, 2026, 4);
-    const cpm25y = cpm(r25), cpm26y = cpm(r26);
-    const ytdD = ((cpm26y - cpm25y) / cpm25y) * 100;
-    const deltaCls = ytdD > 1 ? 'highlight-bad' : ytdD < -1 ? 'highlight-good' : '';
-    const arrow = ytdD > 0 ? '▲' : ytdD < 0 ? '▼' : '—';
+    const y1 = ryRecords(loc, 'Y1');
+    const y2 = ryRecords(loc, 'Y2');
+    const y3 = ryRecords(loc, 'Y3');
+    const cpmY1 = cpm(y1), cpmY2 = cpm(y2), cpmY3 = cpm(y3);
+    const d = ((cpmY3 - cpmY2) / cpmY2) * 100;
+    const deltaCls = d > 1 ? 'highlight-bad' : d < -1 ? 'highlight-good' : '';
+    const arrow = d > 0 ? '▲' : d < 0 ? '▼' : '—';
     return `
       <tr>
         <td><span class="loc-pill l${loc}">${loc}</span></td>
         <td class="num">${fmtN(sum(r,'miles'))}</td>
         <td class="num">${fmt$(sum(r,'total'))}</td>
         <td class="num"><strong>${fmt$d(cpm(r))}</strong></td>
-        <td class="num">${fmt$d(cpm25y)}</td>
-        <td class="num">${fmt$d(cpm26y)}</td>
-        <td class="num ${deltaCls}">${arrow} ${Math.abs(ytdD).toFixed(1)}%</td>
+        <td class="num">${fmt$d(cpmY1)}</td>
+        <td class="num">${fmt$d(cpmY2)}</td>
+        <td class="num">${fmt$d(cpmY3)}</td>
+        <td class="num ${deltaCls}">${arrow} ${Math.abs(d).toFixed(1)}%</td>
       </tr>
     `;
   }).join('');
   document.getElementById('snapshot-table').innerHTML = `
     <thead><tr>
       <th>Location</th><th class="num">Total Miles</th><th class="num">Total Spend</th>
-      <th class="num">Lifetime CPM</th><th class="num">2025 YTD CPM</th>
-      <th class="num">2026 YTD CPM</th><th class="num">YoY Change</th>
+      <th class="num">3-Yr CPM</th><th class="num">Y1 CPM</th>
+      <th class="num">Y2 CPM</th><th class="num">Y3 CPM</th><th class="num">Y3 vs Y2</th>
     </tr></thead><tbody>${rows}</tbody>
   `;
 
   // Mile & spend share donuts
-  new Chart(document.getElementById('chart-mileshare'), {
+  if (mileshareChart) mileshareChart.destroy();
+  mileshareChart = new Chart(document.getElementById('chart-mileshare'), {
     type: 'doughnut',
     data: {
       labels: ['353','356','359'],
@@ -600,7 +794,8 @@ function buildSummary() {
     }
   });
 
-  new Chart(document.getElementById('chart-spendshare'), {
+  if (spendshareChart) spendshareChart.destroy();
+  spendshareChart = new Chart(document.getElementById('chart-spendshare'), {
     type: 'doughnut',
     data: {
       labels: ['353','356','359'],
@@ -640,10 +835,12 @@ function buildComparison(view='monthly') {
         return w.length ? w.reduce((a,b)=>a+b,0)/w.length : null;
       });
     } else if (view === 'annual') {
+      // For each date, return the CPM of the rolling year that date belongs to
       return dates.map(d => {
-        const yr = parseInt(d.substring(0,4));
-        const yearRecs = r.filter(x => x.year === yr);
-        if (yr === 2026) return cpm(yearRecs.filter(x => x.monthNum <= 4));
+        const rec = r.find(x => x.date === d);
+        if (!rec) return null;
+        const ry = rec.rollingYear;
+        const yearRecs = r.filter(x => x.rollingYear === ry);
         return cpm(yearRecs);
       });
     }
@@ -777,21 +974,38 @@ function buildComposition(yearFilter='all') {
   function filterRecs(loc) {
     let r = locRecords(loc);
     if (yearFilter !== 'all') {
-      const y = parseInt(yearFilter);
-      r = r.filter(x => x.year === y);
+      r = r.filter(x => x.rollingYear === yearFilter);
     }
     return r;
   }
 
+  // Build category list — add loaded categories when in loaded view
+  const loaded = isLoadedView();
+  const rates = getRates();
+  const allCats = [...COST_COLS];
+  const allColors = [...COST_COLORS];
+  if (loaded) {
+    allCats.push('Driver Labor', 'Insurance', 'Administration');
+    allColors.push('#c0392b', '#7a4ba5', '#2d7a8a');  // distinct colors so loaded layers stand out
+  }
+
+  // For each loc, compute spend per category (loaded cats are virtual = miles × rate)
+  function catSpend(r, cat) {
+    if (cat === 'Driver Labor') return sum(r, 'miles') * rates.driver;
+    if (cat === 'Insurance') return sum(r, 'miles') * rates.insurance;
+    if (cat === 'Administration') return sum(r, 'miles') * rates.admin;
+    return sum(r, cat);
+  }
+
   // For percent stacking, compute each category's % of total for each location
-  const datasets = COST_COLS.map((cat, i) => ({
+  const datasets = allCats.map((cat, i) => ({
     label: cat,
     data: ['353','356','359'].map(loc => {
       const r = filterRecs(loc);
-      const tot = sum(r, 'total');
-      return tot > 0 ? (sum(r, cat) / tot) * 100 : 0;
+      const tot = sum(r, 'total');  // already includes loaded if in loaded view
+      return tot > 0 ? (catSpend(r, cat) / tot) * 100 : 0;
     }),
-    backgroundColor: COST_COLORS[i],
+    backgroundColor: allColors[i],
     borderWidth: 1,
     borderColor: '#fff'
   }));
@@ -816,11 +1030,12 @@ function buildComposition(yearFilter='all') {
 
   // Composition table (absolute dollars)
   const headerCols = ['353','356','359'].map(l => `<th class="num">Loc ${l}</th>`).join('') + '<th class="num">Total</th>';
-  const catRows = COST_COLS.map(cat => {
-    const vals = ['353','356','359'].map(loc => sum(filterRecs(loc), cat));
+  const catRows = allCats.map(cat => {
+    const vals = ['353','356','359'].map(loc => catSpend(filterRecs(loc), cat));
     const tot = vals.reduce((a,b)=>a+b,0);
+    const isLoaded = ['Driver Labor','Insurance','Administration'].includes(cat);
     return `
-      <tr>
+      <tr${isLoaded ? ' style="background:#fef9ed"' : ''}>
         <td><strong>${cat}</strong></td>
         ${vals.map(v => `<td class="num">${fmt$(v)}</td>`).join('')}
         <td class="num"><strong>${fmt$(tot)}</strong></td>
@@ -876,13 +1091,16 @@ function buildHeatmap(loc='353') {
     }
   }
 
+  // Rolling-year heatmap: rows are months in fiscal order (May–Apr), columns are Y1/Y2/Y3
+  const RY_MONTH_ORDER = [5,6,7,8,9,10,11,12,1,2,3,4]; // May..Apr
   let html = '<div class="heatmap-grid">';
   html += '<div class="h-header"></div>';
-  YEARS.forEach(y => html += `<div class="h-cell h-header">${y}${y===2026?' YTD':''}</div>`);
-  MONTHS.forEach((mname, mi) => {
+  YEARS.forEach(y => html += `<div class="h-cell h-header" title="${YEAR_LABELS[y]}">${y}</div>`);
+  RY_MONTH_ORDER.forEach(mn => {
+    const mname = MONTHS[mn-1];
     html += `<div class="h-cell h-month">${mname}</div>`;
     YEARS.forEach(y => {
-      const rec = r.find(x => x.year === y && x.monthNum === mi+1);
+      const rec = r.find(x => x.rollingYear === y && x.monthNum === mn);
       if (rec) {
         const c = colorFor(rec.cpm);
         const isDark = ((parseInt(c.match(/\d+/g)[0]) + parseInt(c.match(/\d+/g)[1]) + parseInt(c.match(/\d+/g)[2])) / 3) < 140;
@@ -991,14 +1209,14 @@ function buildDeepDive() {
   // Annual totals bar
   const annualData = ['353','356','359'].map(loc => ({
     label: 'Loc ' + loc,
-    data: YEARS.map(y => sum(locRecords(loc).filter(r=>r.year===y), cat)),
+    data: YEARS.map(y => sum(locRecords(loc).filter(r=>r.rollingYear===y), cat)),
     backgroundColor: LOC_COLORS[loc],
     borderWidth: 0
   }));
   if (deepAnnualChart) deepAnnualChart.destroy();
   deepAnnualChart = new Chart(document.getElementById('chart-deep-annual'), {
     type: 'bar',
-    data: { labels: YEARS.map(y => y===2026?'2026 YTD':String(y)), datasets: annualData },
+    data: { labels: YEARS.map(y => YEAR_LABELS[y]), datasets: annualData },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
@@ -1006,7 +1224,7 @@ function buildDeepDive() {
         tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt$(ctx.parsed.y)}` } }
       },
       scales: {
-        x: { grid: { display: false } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
         y: { ticks: { callback: v => '$'+(v/1000).toFixed(0)+'k' }, grid: { color: '#f0f0ed' } }
       }
     }
@@ -1034,6 +1252,167 @@ function buildDeepDive() {
     <thead><tr><th>Loc</th><th class="num">Total</th><th class="num">Monthly Avg</th><th class="num">% of Spend</th><th class="num">$/Mile</th></tr></thead>
     <tbody>${rows}</tbody>
   `;
+
+  // Show/hide fuel-specific deep view
+  const fuelView = document.getElementById('fuel-deep-view');
+  if (cat === 'Fuel Spend') {
+    fuelView.style.display = 'block';
+    buildFuelView();
+  } else {
+    fuelView.style.display = 'none';
+  }
+}
+
+let mpgChart = null, cpgChart = null, fuelMixChart = null;
+
+function buildFuelView() {
+  const dates = sortedDates();
+
+  // === MPG trend chart ===
+  const mpgDatasets = ['353','356','359'].map(loc => {
+    const r = locRecords(loc);
+    const byDate = {};
+    r.forEach(x => byDate[x.date] = x);
+    return {
+      label: 'Loc ' + loc,
+      data: dates.map(d => {
+        const rec = byDate[d];
+        if (!rec || !rec.totalGallons || rec.totalGallons === 0) return null;
+        return rec.mpg;
+      }),
+      borderColor: LOC_COLORS[loc],
+      backgroundColor: LOC_BG[loc],
+      borderWidth: 2.5,
+      pointRadius: 2.5,
+      tension: 0.25,
+      fill: false,
+      spanGaps: false
+    };
+  });
+  if (mpgChart) mpgChart.destroy();
+  mpgChart = new Chart(document.getElementById('chart-mpg'), {
+    type: 'line',
+    data: { labels: dates, datasets: mpgDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y == null ? 'no data' : ctx.parsed.y.toFixed(2) + ' MPG'}` } }
+      },
+      scales: {
+        x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 60 }, grid: { display: false } },
+        y: { title: { display: true, text: 'Miles per Gallon' }, ticks: { callback: v => v.toFixed(1) + ' MPG' }, grid: { color: '#f0f0ed' } }
+      }
+    }
+  });
+
+  // === Cost per gallon trend ===
+  const cpgDatasets = ['353','356','359'].map(loc => {
+    const r = locRecords(loc);
+    const byDate = {};
+    r.forEach(x => byDate[x.date] = x);
+    return {
+      label: 'Loc ' + loc,
+      data: dates.map(d => {
+        const rec = byDate[d];
+        if (!rec || !rec.totalGallons || rec.totalGallons === 0) return null;
+        return rec.costPerGallon;
+      }),
+      borderColor: LOC_COLORS[loc],
+      backgroundColor: LOC_BG[loc],
+      borderWidth: 2.5,
+      pointRadius: 2.5,
+      tension: 0.25,
+      fill: false
+    };
+  });
+  if (cpgChart) cpgChart.destroy();
+  cpgChart = new Chart(document.getElementById('chart-cpg'), {
+    type: 'line',
+    data: { labels: dates, datasets: cpgDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y == null ? 'no data' : '$' + ctx.parsed.y.toFixed(2) + '/gal'}` } }
+      },
+      scales: {
+        x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 60 }, grid: { display: false } },
+        y: { title: { display: true, text: 'Cost per Gallon ($)' }, ticks: { callback: v => '$' + v.toFixed(2) }, grid: { color: '#f0f0ed' } }
+      }
+    }
+  });
+
+  // === On-site vs Card mix — stacked % by location and rolling year ===
+  const mixLabels = [];
+  const onSitePct = [];
+  const cardPct = [];
+  ['353','356','359'].forEach(loc => {
+    YEARS.forEach(y => {
+      const r = locRecords(loc).filter(x => x.rollingYear === y);
+      const os = sum(r, 'onSiteGallons');
+      const cd = sum(r, 'cardGallons');
+      const tot = os + cd;
+      if (tot > 0) {
+        mixLabels.push(loc + ' ' + y);
+        onSitePct.push((os/tot)*100);
+        cardPct.push((cd/tot)*100);
+      }
+    });
+  });
+  if (fuelMixChart) fuelMixChart.destroy();
+  fuelMixChart = new Chart(document.getElementById('chart-fuelmix'), {
+    type: 'bar',
+    data: {
+      labels: mixLabels,
+      datasets: [
+        { label: 'On-Site Bulk', data: onSitePct, backgroundColor: '#2d5e2e', borderWidth: 0 },
+        { label: 'Fuel Card', data: cardPct, backgroundColor: '#f5c518', borderWidth: 0 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxRotation: 60, minRotation: 60, font: { size: 10 } }, grid: { display: false } },
+        y: { stacked: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: '#f0f0ed' } }
+      }
+    }
+  });
+
+  // === Fuel KPI table ===
+  const fuelRows = ['353','356','359'].map(loc => {
+    const r = locRecords(loc);
+    const totMiles = sum(r, 'miles');
+    const totGals = sum(r, 'totalGallons');
+    const totSpend = sum(r, 'Fuel Spend');
+    const onsiteGals = sum(r, 'onSiteGallons');
+    const cardGals = sum(r, 'cardGallons');
+    const onsitePct = totGals > 0 ? (onsiteGals/totGals)*100 : 0;
+    const overallMpg = totGals > 0 ? totMiles/totGals : 0;
+    const blendedCpg = totGals > 0 ? totSpend/totGals : 0;
+    const fuelCPM = totMiles > 0 ? totSpend/totMiles : 0;
+    return `
+      <tr>
+        <td><span class="loc-pill l${loc}">${loc}</span></td>
+        <td class="num">${overallMpg.toFixed(2)}</td>
+        <td class="num">$${blendedCpg.toFixed(2)}</td>
+        <td class="num">${onsitePct.toFixed(0)}%</td>
+        <td class="num">${fmt$d(fuelCPM)}</td>
+      </tr>
+    `;
+  }).join('');
+  document.getElementById('fuel-kpi-table').innerHTML = `
+    <thead><tr>
+      <th>Loc</th><th class="num">Avg MPG</th><th class="num">$/Gal</th><th class="num">On-Site %</th><th class="num">Fuel $/Mile</th>
+    </tr></thead>
+    <tbody>${fuelRows}</tbody>
+  `;
 }
 
 document.getElementById('cat-select').addEventListener('change', buildDeepDive);
@@ -1045,13 +1424,273 @@ document.querySelectorAll('#deep-metric-toggle .btn-toggle').forEach(btn => {
   });
 });
 
+// ========== LOADED COST SUBSYSTEM ==========
+// Snapshot original totals once so we can flip between views without losing them
+DATA.records.forEach(r => {
+  r._totalBase = r.total;
+  r._cpmBase = r.cpm;
+});
+
+function getRates() {
+  return {
+    driver: parseFloat(document.getElementById('rate-driver').value) || 0,
+    insurance: parseFloat(document.getElementById('rate-insurance').value) || 0,
+    admin: parseFloat(document.getElementById('rate-admin').value) || 0
+  };
+}
+function getRateSum() {
+  const r = getRates();
+  return r.driver + r.insurance + r.admin;
+}
+function isLoadedView() {
+  const active = document.querySelector('#cost-view-toggle .btn-toggle.active');
+  return active && active.dataset.view === 'loaded';
+}
+
+// Apply cost view: overwrite r.total and r.cpm based on current toggle + rates
+function applyCostView() {
+  const loaded = isLoadedView();
+  const rateSum = getRateSum();
+  DATA.records.forEach(r => {
+    if (loaded) {
+      const added = r.miles * rateSum;
+      r.total = r._totalBase + added;
+      r.cpm = r._totalBase / r.miles + rateSum;  // cleaner than recomputing
+    } else {
+      r.total = r._totalBase;
+      r.cpm = r._cpmBase;
+    }
+  });
+  // Update the rates display in the global toggle band
+  const rates = getRates();
+  document.getElementById('global-rates-display').innerHTML =
+    `Loaded rates: <strong>$${rates.driver.toFixed(2)}</strong> driver · ` +
+    `<strong>$${rates.insurance.toFixed(2)}</strong> ins · ` +
+    `<strong>$${rates.admin.toFixed(2)}</strong> admin <span style="opacity:0.6"> (edit on Fully-Loaded CPM tab)</span>`;
+}
+
+function rebuildAll() {
+  applyCostView();
+  // Mark all panels as dirty; rebuild only the active one immediately,
+  // and rebuild others when their tab gets clicked (lazy refresh).
+  dirtyPanels = { summary: true, loaded: true, comparison: true, composition: true, heatmap: true, deepdive: true };
+  refreshActivePanel();
+}
+
+let dirtyPanels = {};
+function getActivePanelKey() {
+  const active = document.querySelector('.tab.active');
+  return active ? active.dataset.tab : 'summary';
+}
+function refreshActivePanel() {
+  const key = getActivePanelKey();
+  if (!dirtyPanels[key]) return;
+  try {
+    if (key === 'summary') buildSummary();
+    else if (key === 'loaded') buildLoadedPanel();
+    else if (key === 'comparison') buildComparison(document.querySelector('#cpm-view-toggle .btn-toggle.active').dataset.view);
+    else if (key === 'composition') buildComposition(document.querySelector('#comp-year-toggle .btn-toggle.active').dataset.year);
+    else if (key === 'heatmap') { buildHeatmap(document.querySelector('#heatmap-loc-toggle .btn-toggle.active').dataset.loc); buildBestWorst(); }
+    else if (key === 'deepdive') buildDeepDive();
+    dirtyPanels[key] = false;
+  } catch (e) {
+    console.error('Panel refresh error (' + key + '):', e);
+  }
+}
+
+// Cost view toggle event
+document.querySelectorAll('#cost-view-toggle .btn-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#cost-view-toggle .btn-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    rebuildAll();
+  });
+});
+
+// Rate input events — apply view, then lazy-refresh active panel; others go dirty
+['rate-driver','rate-insurance','rate-admin'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    applyCostView();
+    // Mark every panel dirty (rate change affects every chart in loaded mode)
+    dirtyPanels = { summary: true, loaded: true, comparison: true, composition: true, heatmap: true, deepdive: true };
+    refreshActivePanel();
+  });
+});
+
+// ========== FULLY-LOADED CPM PANEL ==========
+let loadedCompareChart = null, loadedTrendChart = null;
+
+function buildLoadedPanel() {
+  const rates = getRates();
+  const rateSum = rates.driver + rates.insurance + rates.admin;
+
+  // KPI tiles — show added cost per location + fleet-wide
+  const locStats = ['353','356','359'].map(loc => {
+    const r = locRecords(loc);
+    const miles = sum(r,'miles');
+    const opSpend = sum(r,'_totalBase');
+    const addedSpend = miles * rateSum;
+    const loadedSpend = opSpend + addedSpend;
+    const opCpm = opSpend/miles;
+    const loadedCpm = loadedSpend/miles;
+    return { loc, miles, opSpend, addedSpend, loadedSpend, opCpm, loadedCpm };
+  });
+  const fleetMiles = locStats.reduce((s,l)=>s+l.miles,0);
+  const fleetOpSpend = locStats.reduce((s,l)=>s+l.opSpend,0);
+  const fleetAddedSpend = locStats.reduce((s,l)=>s+l.addedSpend,0);
+  const fleetLoadedSpend = fleetOpSpend + fleetAddedSpend;
+  const fleetOpCpm = fleetOpSpend/fleetMiles;
+  const fleetLoadedCpm = fleetLoadedSpend/fleetMiles;
+
+  const tiles = [
+    {label:'Added Cost (3-Yr)', value: fmt$(fleetAddedSpend), sub: 'Driver + Insurance + Admin combined', accent:true},
+    {label:'Operating CPM', value: fmt$d(fleetOpCpm), sub: 'Fleet-wide, from the spreadsheet'},
+    {label:'Fully-Loaded CPM', value: fmt$d(fleetLoadedCpm), sub: '+ $' + rateSum.toFixed(2) + '/mi added', accent:true},
+    {label:'% Increase', value: ((fleetLoadedCpm/fleetOpCpm - 1)*100).toFixed(1) + '%', sub: 'Loaded vs operating'},
+  ];
+  document.getElementById('loaded-kpi-tiles').innerHTML = tiles.map(t => `
+    <div class="kpi ${t.accent?'accent':''}">
+      <div class="kpi-label">${t.label}</div>
+      <div class="kpi-value">${t.value}</div>
+      ${t.sub ? `<div class="kpi-sub">${t.sub}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Stacked bar chart: per location, Operating + Driver + Insurance + Admin
+  const labels = locStats.map(l => 'Loc ' + l.loc);
+  if (loadedCompareChart) loadedCompareChart.destroy();
+  loadedCompareChart = new Chart(document.getElementById('chart-loaded-compare'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Operating CPM', data: locStats.map(l => l.opCpm), backgroundColor: '#2d5e2e' },
+        { label: 'Driver ($' + rates.driver.toFixed(2) + ')', data: locStats.map(() => rates.driver), backgroundColor: '#f5c518' },
+        { label: 'Insurance ($' + rates.insurance.toFixed(2) + ')', data: locStats.map(() => rates.insurance), backgroundColor: '#8b6332' },
+        { label: 'Admin ($' + rates.admin.toFixed(2) + ')', data: locStats.map(() => rates.admin), backgroundColor: '#4a8a4c' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(3)}/mi` } }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, title: { display: true, text: 'Cost Per Mile ($)' }, ticks: { callback: v => '$' + v.toFixed(2) }, grid: { color: '#f0f0ed' } }
+      }
+    }
+  });
+
+  // Breakdown table
+  const rows = locStats.map(l => `
+    <tr>
+      <td><span class="loc-pill l${l.loc}">${l.loc}</span></td>
+      <td class="num">${fmtN(l.miles)}</td>
+      <td class="num">${fmt$(l.opSpend)}</td>
+      <td class="num">${fmt$d(l.opCpm)}</td>
+      <td class="num">${fmt$(l.miles * rates.driver)}</td>
+      <td class="num">${fmt$(l.miles * rates.insurance)}</td>
+      <td class="num">${fmt$(l.miles * rates.admin)}</td>
+      <td class="num"><strong>${fmt$(l.loadedSpend)}</strong></td>
+      <td class="num"><strong>${fmt$d(l.loadedCpm)}</strong></td>
+    </tr>
+  `).join('');
+  const totalRow = `
+    <tr style="background:#fafaf5;border-top:2px solid var(--mccoy-yellow)">
+      <td><strong>FLEET</strong></td>
+      <td class="num"><strong>${fmtN(fleetMiles)}</strong></td>
+      <td class="num"><strong>${fmt$(fleetOpSpend)}</strong></td>
+      <td class="num"><strong>${fmt$d(fleetOpCpm)}</strong></td>
+      <td class="num"><strong>${fmt$(fleetMiles * rates.driver)}</strong></td>
+      <td class="num"><strong>${fmt$(fleetMiles * rates.insurance)}</strong></td>
+      <td class="num"><strong>${fmt$(fleetMiles * rates.admin)}</strong></td>
+      <td class="num"><strong>${fmt$(fleetLoadedSpend)}</strong></td>
+      <td class="num"><strong>${fmt$d(fleetLoadedCpm)}</strong></td>
+    </tr>
+  `;
+  document.getElementById('loaded-breakdown-table').innerHTML = `
+    <thead><tr>
+      <th>Loc</th><th class="num">Miles</th><th class="num">Op Spend</th><th class="num">Op CPM</th>
+      <th class="num">+Driver</th><th class="num">+Insurance</th><th class="num">+Admin</th>
+      <th class="num">Loaded Spend</th><th class="num">Loaded CPM</th>
+    </tr></thead>
+    <tbody>${rows}${totalRow}</tbody>
+  `;
+
+  // Trend chart — show fully-loaded CPM by month for each location (uses _totalBase so it ignores the toggle)
+  const dates = sortedDates();
+  const trendDatasets = ['353','356','359'].map(loc => {
+    const r = locRecords(loc);
+    const byDate = {};
+    r.forEach(x => byDate[x.date] = x);
+    return {
+      label: 'Loc ' + loc + ' (Loaded)',
+      data: dates.map(d => {
+        const rec = byDate[d];
+        if (!rec) return null;
+        return rec._totalBase/rec.miles + rateSum;
+      }),
+      borderColor: LOC_COLORS[loc],
+      backgroundColor: LOC_BG[loc],
+      borderWidth: 2.5,
+      pointRadius: 2,
+      tension: 0.25,
+      fill: false
+    };
+  });
+  if (loadedTrendChart) loadedTrendChart.destroy();
+  loadedTrendChart = new Chart(document.getElementById('chart-loaded-trend'), {
+    type: 'line',
+    data: { labels: dates, datasets: trendDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 14, padding: 12, font: { weight: 600 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt$d(ctx.parsed.y)}/mi` } }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 60, minRotation: 60, autoSkip: true, maxTicksLimit: 18 }, grid: { display: false } },
+        y: { title: { display: true, text: 'Fully-Loaded Cost Per Mile ($)' }, ticks: { callback: v => '$' + v.toFixed(2) }, grid: { color: '#f0f0ed' } }
+      }
+    }
+  });
+}
+
 // ========== INITIALIZE ==========
-buildSummary();
-buildComparison();
-buildComposition();
-buildHeatmap();
-buildBestWorst();
-buildDeepDive();
+window.addEventListener('error', function(e) {
+  // Ignore cross-origin "Script error." with empty filename/lineno — these are
+  // Chart.js internal warnings about hidden canvases, not actual failures.
+  if (e.message === 'Script error.' && !e.filename && !e.lineno) return;
+  console.error('DASHBOARD ERROR:', e.message, 'at', e.filename + ':' + e.lineno + ':' + e.colno);
+  if (e.error && e.error.stack) console.error(e.error.stack);
+  // Show error in UI so user can see it
+  const errBox = document.createElement('div');
+  errBox.style.cssText = 'position:fixed;top:10px;right:10px;background:#c0392b;color:white;padding:12px 16px;border-radius:6px;font-family:monospace;font-size:12px;max-width:500px;z-index:99999;white-space:pre-wrap;';
+  errBox.textContent = 'Dashboard error: ' + e.message + '\n' + (e.error && e.error.stack ? e.error.stack.split('\n').slice(0,3).join('\n') : '');
+  document.body.appendChild(errBox);
+});
+
+try {
+  applyCostView();  // sets r.total / r.cpm to current view (default operating)
+  buildSummary();
+  buildComparison();
+  buildComposition();
+  buildHeatmap();
+  buildBestWorst();
+  buildDeepDive();
+  buildLoadedPanel();
+} catch (e) {
+  console.error('Init failed:', e);
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="background:#c0392b;color:white;padding:16px;font-family:monospace;font-size:13px;">' +
+    '<strong>Init error:</strong> ' + e.message + '<br><br>' +
+    (e.stack ? '<pre style="white-space:pre-wrap;font-size:11px;">' + e.stack + '</pre>' : '') +
+    '</div>'
+  );
+}
 </script>
 </body>
 </html>
